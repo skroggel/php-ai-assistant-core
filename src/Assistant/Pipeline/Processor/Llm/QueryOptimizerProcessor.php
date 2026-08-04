@@ -24,6 +24,7 @@ use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
  *
  * Rewrites the user query for retrieval while preserving the original query.
  *
+ * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

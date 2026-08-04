@@ -24,6 +24,7 @@ use Madj2k\AiCore\Assistant\Pipeline\Processor\ProcessorInterface;
  * Reads the last retrieval result from conversation memory and writes it into the current retrieval context.
  * Use this as the first memory step in follow-up pipelines that should reuse the previous retrieval.
  *
+ * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore

@@ -15,6 +15,7 @@ use Qdrant\Qdrant;
  *
  * Creates native Qdrant SDK clients backed by a timeout-aware Guzzle client.
  *
+ * @internal Use QdrantClientFactoryInterface to provide custom client creation.
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

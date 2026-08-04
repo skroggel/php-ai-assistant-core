@@ -26,6 +26,17 @@ composer test
 
 The test suite is framework-independent and does not bootstrap TYPO3.
 
+## Public API and extension points
+
+Integrations should depend on the provided interfaces, DTOs, configuration contracts and public
+facades. Custom pipeline processors, prompt context builders, connectors, client factories,
+indexers and file adapters are integrated through their corresponding interfaces or abstract base
+classes.
+
+Classes marked with `@internal` are bundled implementations or provider-specific helpers. They may
+change without backward-compatibility guarantees and should not be extended or referenced by
+integrations. The annotation does not restrict direct use in tests.
+
 ## Connector resilience
 
 OpenAI and Qdrant clients are created through injectable factories. The default factories use

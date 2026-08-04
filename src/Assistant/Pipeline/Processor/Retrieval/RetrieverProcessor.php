@@ -25,6 +25,7 @@ use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
  *
  * Pipeline processor that delegates retrieval to a connector.
  *
+ * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

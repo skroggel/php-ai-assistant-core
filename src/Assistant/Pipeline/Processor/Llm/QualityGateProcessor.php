@@ -23,6 +23,7 @@ use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
  *
  * Checks and finalizes the answer candidate.
  *
+ * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

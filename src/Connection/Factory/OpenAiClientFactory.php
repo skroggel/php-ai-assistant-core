@@ -13,6 +13,7 @@ use OpenAI\Contracts\ClientContract;
  *
  * Creates native OpenAI SDK clients backed by a timeout-aware Guzzle client.
  *
+ * @internal Use OpenAiClientFactoryInterface to provide custom client creation.
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

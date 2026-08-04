@@ -10,6 +10,7 @@ use Psr\Http\Client\NetworkExceptionInterface;
  *
  * Extracts HTTP status codes and identifies transient provider failures eligible for retry.
  *
+ * @internal Provider connectors expose normalized public exceptions instead.
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

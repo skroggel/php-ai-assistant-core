@@ -17,6 +17,7 @@ use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
  *
  * Converts retrieved documents and their metadata into compact prompt context.
  *
+ * @internal Prompt context implementations may change independently of the public builder contract.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

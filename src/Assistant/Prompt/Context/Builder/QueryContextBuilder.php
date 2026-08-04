@@ -18,6 +18,7 @@ use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
  *
  * Builds prompt sections for original and current user queries.
  *
+ * @internal Register custom prompt context through ContextBuilderInterface.
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore

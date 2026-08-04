@@ -8,6 +8,7 @@ namespace Madj2k\AiCore\Connection\Resilience;
  *
  * Wraps the final provider failure together with retry diagnostics.
  *
+ * @internal Provider connectors convert this exception into public provider exceptions.
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

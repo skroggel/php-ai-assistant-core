@@ -24,6 +24,7 @@ use Madj2k\AiCore\Exception\AppException;
  * Writes the current retrieval state into conversation memory as the last retrieval result.
  * This processor is explicit pipeline behavior; the orchestrator does not persist retrieval by default.
  *
+ * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore

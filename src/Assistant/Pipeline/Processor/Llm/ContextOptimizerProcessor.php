@@ -25,6 +25,7 @@ use Madj2k\AiCore\Exception\AppException;
  *
  * Uses the LLM to condense retrieved documents into a focused answer context.
  *
+ * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

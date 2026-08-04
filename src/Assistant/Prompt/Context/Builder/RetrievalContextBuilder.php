@@ -20,6 +20,7 @@ use Madj2k\AiCore\Assistant\Enum\AssistantPipelineStage;
  *
  * Builds prompt sections derived from retrieved documents and cached answer context.
  *
+ * @internal Register custom prompt context through ContextBuilderInterface.
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore

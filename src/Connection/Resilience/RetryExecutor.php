@@ -11,6 +11,7 @@ use Psr\Log\NullLogger;
  *
  * Executes provider operations with bounded retry delays and structured retry logging.
  *
+ * @internal Configure connector retries through RetryPolicy.
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
