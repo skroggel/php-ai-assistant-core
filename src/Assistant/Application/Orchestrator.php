@@ -62,7 +62,7 @@ final readonly class Orchestrator
 
 
     /**
-     * Executes one chat turn and streams chunks from streaming-capable processors.
+     * Executes one chat turn and streams chunks from the final user-visible answer stage.
      *
      * @param \Madj2k\AiCore\Assistant\DTO\AssistantRequest $assistantRequest Assistant request.
      * @param callable $onData Callback for streamed chunks.

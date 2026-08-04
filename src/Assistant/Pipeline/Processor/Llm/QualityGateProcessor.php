@@ -15,6 +15,7 @@ use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\Assistant\Log\PipelineLogMetaData;
 use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
 use Madj2k\AiCore\Assistant\Pipeline\Processor\AbstractLlmProcessor;
+use Madj2k\AiCore\Assistant\Pipeline\Processor\ProcessorStreamingInterface;
 use Madj2k\AiCore\Assistant\Prompt\PromptBuilder;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 
@@ -29,7 +30,7 @@ use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
-final class QualityGateProcessor extends AbstractLlmProcessor
+final class QualityGateProcessor extends AbstractLlmProcessor implements ProcessorStreamingInterface
 {
     /**
      * Constructor.
@@ -82,6 +83,28 @@ final class QualityGateProcessor extends AbstractLlmProcessor
     {
         $messages = $this->promptBuilder->buildMessages($context, $step);
         $answer = $this->callAi($context, $messages, $step, $logContext);
+        $context->getAnswer()->setFinal($answer !== '' ? $answer : $context->getAnswer()->getCandidate());
+
+        // trace
+        $context->getProcessingTrace()->add('quality_gate.completed',
+            $step->getUid(),
+            $messages,
+            $context->getAnswer()->getFinal()
+        );
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    public function processStream(
+        Context $context,
+        PipelineStepConfigurationInterface $step,
+        callable $onData,
+        ?PipelineLogMetaData $logContext = null
+    ): void {
+        $messages = $this->promptBuilder->buildMessages($context, $step);
+        $answer = $this->callAiStream($context, $messages, $step, $onData, $logContext);
         $context->getAnswer()->setFinal($answer !== '' ? $answer : $context->getAnswer()->getCandidate());
 
         // trace

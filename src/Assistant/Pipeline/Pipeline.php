@@ -13,6 +13,7 @@ use Madj2k\AiCore\Assistant\Context\Context;
 use Madj2k\AiCore\Assistant\DTO\AssistantResponse;
 use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineFailureStrategy;
+use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\Assistant\Log\PipelineLogMetaData;
 use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
 use Madj2k\AiCore\Assistant\Pipeline\Processor\ProcessorStreamingInterface;
@@ -62,7 +63,7 @@ final class Pipeline
 
 
     /**
-     * Runs the pipeline and streams processor output where supported.
+     * Runs the pipeline and streams only the final user-visible answer stage.
      *
      * @param \Madj2k\AiCore\Assistant\Context\Context $context Current chat context.
      * @param iterable<\Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface> $steps Configured steps.
@@ -110,11 +111,23 @@ final class Pipeline
 
         /** @var array<int,string> $sourceFields */
         $sourceFields = [];
+        $visibleAnswerStepIndex = $onData !== null
+            ? $this->resolveVisibleAnswerStepIndex($steps)
+            : null;
+        $streamedData = false;
+        $streamCallback = $onData !== null
+            ? static function (string $chunk) use ($onData, &$streamedData): void {
+                if ($chunk !== '') {
+                    $streamedData = true;
+                }
+                $onData($chunk);
+            }
+            : null;
 
         /**
          * @var \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step
          */
-        foreach ($steps as $step) {
+        foreach ($steps as $stepIndex => $step) {
             if ($step->getPromptMetadataFieldList() !== []) {
                 $sourceFields = $step->getPromptMetadataFieldList();
             }
@@ -149,8 +162,12 @@ final class Pipeline
             }
 
             try {
-                if ($onData !== null && $processor instanceof ProcessorStreamingInterface) {
-                    $processor->processStream($context, $step, $onData, $logContext);
+                if (
+                    $stepIndex === $visibleAnswerStepIndex
+                    && $streamCallback !== null
+                    && $processor instanceof ProcessorStreamingInterface
+                ) {
+                    $processor->processStream($context, $step, $streamCallback, $logContext);
                 } else {
                     $processor->process($context, $step, $logContext);
                 }
@@ -178,13 +195,42 @@ final class Pipeline
                     ]);
                 }
 
-                if ($step->getFailureStrategy() === AssistantPipelineFailureStrategy::Stop) {
+                if (
+                    $step->getFailureStrategy() === AssistantPipelineFailureStrategy::Stop
+                    || ($stepIndex === $visibleAnswerStepIndex && $streamedData)
+                ) {
                     throw $exception;
                 }
             }
         }
 
-        return $this->createResponse($context, $sourceFields);
+        $response = $this->createResponse($context, $sourceFields);
+        if ($onData !== null && !$streamedData && $response->answer !== '') {
+            $onData($response->answer);
+        }
+
+        return $response;
+    }
+
+
+    /**
+     * Returns the last step that can define the user-visible answer.
+     *
+     * @param array<int, \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface> $steps Pipeline steps.
+     * @return int|null Step index.
+     */
+    private function resolveVisibleAnswerStepIndex(array $steps): ?int
+    {
+        for ($index = count($steps) - 1; $index >= 0; --$index) {
+            if (in_array($steps[$index]->getType(), [
+                AssistantPipelineProcessorType::AnswerGenerator,
+                AssistantPipelineProcessorType::QualityGate,
+            ], true)) {
+                return $index;
+            }
+        }
+
+        return null;
     }
 
 
