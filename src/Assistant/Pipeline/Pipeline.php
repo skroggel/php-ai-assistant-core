@@ -26,7 +26,7 @@ use Madj2k\AiCore\Assistant\Pipeline\Registry\ProcessorRegistry;
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final class Pipeline
 {
@@ -218,7 +218,7 @@ final class Pipeline
 
 
     /**
-     * Creates deduplicated frontend sources from retrieved documents.
+     * Creates deduplicated presentation-layer sources from retrieved documents.
      *
      * @param array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument> $documents Retrieved documents.
      * @param array<int,string> $fields Source field names.

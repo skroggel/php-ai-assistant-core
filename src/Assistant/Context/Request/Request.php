@@ -14,12 +14,12 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * Class Request
  *
- * Contains the original frontend request data for a conversational turn.
+ * Contains the original application request data for a conversational turn.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final class Request
 {
@@ -48,7 +48,7 @@ final class Request
 
 
     /**
-     * Runtime settings provided by the frontend plugin.
+     * Runtime settings provided by the host application.
      *
      * @var array<string,mixed>
      */
@@ -61,7 +61,7 @@ final class Request
      * @param string $query Current user query.
      * @param string $chatIdentifier Stable key for the conversation.
      * @param \Psr\Http\Message\ServerRequestInterface|null $serverRequest Current server request.
-     * @param array<string,mixed> $runtimeSettings Runtime settings provided by the frontend plugin.
+     * @param array<string,mixed> $runtimeSettings Runtime settings provided by the host application.
      */
     public function __construct(
         string $query = '',

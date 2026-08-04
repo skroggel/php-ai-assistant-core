@@ -2,10 +2,9 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the AI Chat extension.
+ * This file is part of madj2k/ai-core.
  *
- * For the full copyright and license information, please read the
- * LICENSE file that was distributed with this source code.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -18,14 +17,14 @@ use Madj2k\AiCore\Assistant\Log\PipelineLogMetaData;
 
 
 /**
- * Interface ChatPipelineStepProcessorInterface
+ * Interface ProcessorInterface
  *
  * Contract for one typed chat pipeline processor.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 interface ProcessorInterface
 {

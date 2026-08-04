@@ -12,16 +12,16 @@ namespace Madj2k\AiCore\Assistant\Log;
 use Madj2k\AiCore\Assistant\Configuration\AssistantConfigurationInterface;
 
 /**
- * Class ChatPipelineLogContext
+ * Class PipelineLogMetaData
  *
- * Carries the trace identity for one chat request. The context is intentionally
- * small so it can be passed through legacy and new chat services without coupling
- * them to a specific pipeline implementation.
+ * Carries the trace identity for one assistant request. The context is intentionally
+ * small so it can be passed through application services without coupling them to a
+ * specific pipeline implementation.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 class PipelineLogMetaData
 {

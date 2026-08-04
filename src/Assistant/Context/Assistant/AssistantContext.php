@@ -20,7 +20,7 @@ use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInt
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final class AssistantContext
 {
@@ -65,7 +65,7 @@ final class AssistantContext
 
 
     /**
-     * Qdrant collection used by retrieval steps.
+     * Vector-store collection used by retrieval steps.
      *
      * @var string
      */
@@ -237,9 +237,9 @@ final class AssistantContext
 
 
     /**
-     * Returns the Qdrant collection used by retrieval steps.
+     * Returns the vector-store collection used by retrieval steps.
      *
-     * @return string Qdrant collection used by retrieval steps.
+     * @return string Vector-store collection used by retrieval steps.
      */
     public function getCollection(): string
     {
@@ -248,9 +248,9 @@ final class AssistantContext
 
 
     /**
-     * Sets the Qdrant collection used by retrieval steps.
+     * Sets the vector-store collection used by retrieval steps.
      *
-     * @param string $collection Qdrant collection used by retrieval steps.
+     * @param string $collection Vector-store collection used by retrieval steps.
      * @return void
      */
     public function setCollection(string $collection): void

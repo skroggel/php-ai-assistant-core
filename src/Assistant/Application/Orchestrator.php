@@ -22,12 +22,12 @@ use Madj2k\AiCore\Exception\AssistantException;
 /**
  * Class Orchestrator
  *
- * Coordinates history, pipeline execution and tracing for one frontend chat turn.
+ * Coordinates history, pipeline execution and tracing for one assistant turn.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final readonly class Orchestrator
 {
@@ -37,7 +37,7 @@ final readonly class Orchestrator
      * @param \Madj2k\AiCore\Assistant\Context\ContextFactory $contextFactory Runtime context factory.
      * @param \Madj2k\AiCore\Assistant\Pipeline\Pipeline $pipeline Pipeline.
      * @param \Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface $pipelineLogger Pipeline logger.
-     * @param \Madj2k\AiCore\Assistant\Memory\MemoryInterface $sessionMemory Session memory.
+     * @param \Madj2k\AiCore\Assistant\Memory\MemoryInterface $sessionMemory Conversation memory.
      */
     public function __construct(
         private ContextFactory $contextFactory,
@@ -76,7 +76,7 @@ final readonly class Orchestrator
 
 
     /**
-     * Prepares one streaming chat turn before the SSE response is created.
+     * Prepares one streaming assistant turn before the response stream is created.
      *
      * This keeps session/history handling in the normal controller request phase
      * and delays only the actual pipeline streaming until response emission.
@@ -241,7 +241,7 @@ final readonly class Orchestrator
     {
         $assistantProfile = $assistantRequest->assistantProfile;
         if (!$assistantProfile instanceof AssistantConfigurationInterface) {
-            throw new AssistantException('No active assistant profile selected for this chat plugin.', 1760001002);
+            throw new AssistantException('No active assistant configuration supplied.', 1760001002);
         }
 
         return $assistantProfile;

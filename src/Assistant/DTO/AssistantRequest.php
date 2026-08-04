@@ -14,14 +14,14 @@ use Madj2k\AiCore\Assistant\Configuration\AssistantConfigurationInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Class ChatTurnRequest
+ * Class AssistantRequest
  *
- * Immutable input for one frontend chat turn.
+ * Immutable input for one assistant turn.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final readonly class AssistantRequest
 {
@@ -29,11 +29,11 @@ final readonly class AssistantRequest
      * Constructor.
      *
      * @param string $query User query.
-     * @param int $startTimestamp Frontend page timestamp.
-     * @param \Madj2k\AiCore\Assistant\Configuration\AssistantConfigurationInterface $assistantProfile Active assistant profile selected in the plugin.
-     * @param string $chatIdentifier Frontend conversation identifier.
+     * @param int $startTimestamp Request start timestamp.
+     * @param \Madj2k\AiCore\Assistant\Configuration\AssistantConfigurationInterface $assistantProfile Active assistant configuration.
+     * @param string $chatIdentifier Conversation identifier.
      * @param \Psr\Http\Message\ServerRequestInterface|null $serverRequest Current server request.
-     * @param array<string,mixed> $runtimeSettings Runtime settings provided by the frontend plugin.
+     * @param array<string,mixed> $runtimeSettings Runtime settings provided by the host application.
      */
     public function __construct(
         public string $query,

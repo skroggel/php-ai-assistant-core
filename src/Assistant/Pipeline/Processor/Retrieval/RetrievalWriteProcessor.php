@@ -15,20 +15,19 @@ use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\Assistant\Log\PipelineLogMetaData;
 use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
 use Madj2k\AiCore\Assistant\Memory\MemoryInterface;
-use Madj2k\AiCore\Assistant\Pipeline\Processor\IO\ProcessorIoTrait;
 use Madj2k\AiCore\Assistant\Pipeline\Processor\ProcessorInterface;
 use Madj2k\AiCore\Exception\AppException;
 
 /**
  * Class RetrievalWriteProcessor
  *
- * Writes the current retrieval state into session memory as the last retrieval result.
+ * Writes the current retrieval state into conversation memory as the last retrieval result.
  * This processor is explicit pipeline behavior; the orchestrator does not persist retrieval by default.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final readonly class RetrievalWriteProcessor implements ProcessorInterface
 {
@@ -44,7 +43,7 @@ final readonly class RetrievalWriteProcessor implements ProcessorInterface
     /**
      * Constructor.
      *
-     * @param \Madj2k\AiCore\Assistant\Memory\MemoryInterface $sessionMemory Session memory.
+     * @param \Madj2k\AiCore\Assistant\Memory\MemoryInterface $sessionMemory Conversation memory.
      * @param \Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface $pipelineLogger Pipeline logger.
      */
     public function __construct(

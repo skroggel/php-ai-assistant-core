@@ -11,14 +11,14 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Assistant\DTO;
 
 /**
- * Class ChatTurnResponse
+ * Class AssistantResponse
  *
- * Result returned to the frontend for one chat turn.
+ * Result returned for one assistant turn.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final readonly class AssistantResponse
 {

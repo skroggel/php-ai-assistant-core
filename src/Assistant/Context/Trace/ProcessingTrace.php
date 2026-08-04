@@ -19,7 +19,7 @@ namespace Madj2k\AiCore\Assistant\Context\Trace;
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final class ProcessingTrace
 {
@@ -33,17 +33,17 @@ final class ProcessingTrace
      * Adds a trace entry.
      *
      * @param string $event Event name.
-     * @param int $stepId Step identifier.
+     * @param int|null $stepId Step identifier, or null for an unpersisted step.
      * @param mixed $input Input value.
      * @param mixed $output Output value.
      * @param array<string, mixed> $payload Event payload.
      * @return void
      */
-    public function add(string $event, int $stepId, mixed $input, mixed $output, array $payload = []): void
+    public function add(string $event, ?int $stepId, mixed $input, mixed $output, array $payload = []): void
     {
         $this->entries[] = [
             'event' => $event,
-            'step_id' => $stepId,
+            'step_id' => (int)$stepId,
             'input' => $this->stringifyTraceValue($input),
             'output' => $this->stringifyTraceValue($output),
             'payload' => $payload,

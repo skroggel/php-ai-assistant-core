@@ -21,7 +21,7 @@ use Madj2k\AiCore\DTO\DocumentMetadata;
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
- * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 final readonly class RetrievalDocument
 {
@@ -142,7 +142,7 @@ final readonly class RetrievalDocument
 
 
     /**
-     * Returns selected metadata fields for frontend source output.
+     * Returns selected metadata fields for presentation-layer source output.
      *
      * @param array<int,string> $fields Source field names.
      * @return array<string,mixed> Source data.
