@@ -11,7 +11,7 @@ namespace Madj2k\AiCore\Assistant\Context\Retrieval;
 use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 
 /**
- * Class RetrievalState
+ * Class RetrievalResult
  *
  * Holds raw retrieval results and the answer context derived from them.
  *

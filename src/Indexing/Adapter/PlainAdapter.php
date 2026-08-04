@@ -20,7 +20,7 @@ namespace Madj2k\AiCore\Indexing\Adapter;
 use Madj2k\AiCore\DTO\DocumentMetadata;
 
 /**
- * Class PlainTextContentAdapter
+ * Class PlainAdapter
  *
  * Extracts text from plain text files.
  *

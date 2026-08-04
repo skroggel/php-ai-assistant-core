@@ -21,7 +21,7 @@ use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
 use Madj2k\AiCore\DTO\DocumentMetadata;
 
 /**
- * Class JsonContentAdapter
+ * Class JsonAdapter
  *
  * Extracts normalized text from JSON and JSONL files.
  *

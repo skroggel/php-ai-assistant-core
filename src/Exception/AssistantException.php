@@ -20,6 +20,8 @@ namespace Madj2k\AiCore\Exception;
 /**
  * Class AssistantException
  *
+ * Raised for assistant configuration and pipeline execution failures.
+ *
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore

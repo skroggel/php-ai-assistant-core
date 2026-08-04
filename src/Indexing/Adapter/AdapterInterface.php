@@ -20,7 +20,7 @@ namespace Madj2k\AiCore\Indexing\Adapter;
 use Madj2k\AiCore\DTO\DocumentMetadata;
 
 /**
- * Interface TextContentAdapterInterface
+ * Interface AdapterInterface
  *
  * Converts raw content files into normalized indexable text and metadata.
  *

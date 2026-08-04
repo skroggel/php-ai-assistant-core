@@ -10,14 +10,33 @@ use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
 
+/**
+ * Class ConnectionHealthChecker
+ *
+ * Performs minimal provider operations to verify AI and vector store connections.
+ *
+ * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>
+ * @package Madj2k\\AiCore
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ */
 final readonly class ConnectionHealthChecker
 {
+    /**
+     * @param \Madj2k\AiCore\Connection\Resolver\AiConnectorResolver $aiConnectorResolver AI connector resolver.
+     * @param \Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver $vectorStoreConnectorResolver Vector store connector resolver.
+     */
     public function __construct(
         private AiConnectorResolver $aiConnectorResolver,
         private VectorStoreConnectorResolver $vectorStoreConnectorResolver,
     ) {
     }
 
+    /**
+     * Verifies an AI connection by requesting an embedding for a probe text.
+     *
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
     public function checkAi(
         AiConnectionConfigurationInterface $connection,
         string $probeText = 'AI connection test',
@@ -29,6 +48,13 @@ final readonly class ConnectionHealthChecker
         return $response->getEmbedding() !== [];
     }
 
+    /**
+     * Verifies a vector store connection by ensuring a collection exists.
+     *
+     * If no collection is supplied, the configured default or a dedicated probe collection is used.
+     *
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
     public function checkVectorStore(
         VectorStoreConnectionConfigurationInterface $connection,
         ?VectorCollection $collection = null,

@@ -21,7 +21,7 @@ use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
 
 /**
- * Class RetrievalProcessor
+ * Class RetrieverProcessor
  *
  * Pipeline processor that delegates retrieval to a connector.
  *

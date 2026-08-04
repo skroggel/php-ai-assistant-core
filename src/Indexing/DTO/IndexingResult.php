@@ -174,6 +174,9 @@ final class IndexingResult
     }
 
 
+    /**
+     * @return int
+     */
     public function getFailed(): int
     {
         return $this->failed;

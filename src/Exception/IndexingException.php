@@ -17,7 +17,9 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Exception;
 
 /**
- * Class PipelineException
+ * Class IndexingException
+ *
+ * Raised when source preparation or document indexing fails.
  *
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>

@@ -14,7 +14,7 @@ use Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 
 /**
- * Class ContextBuilderInterface
+ * Interface ContextBuilderInterface
  *
  * Defines a builder that contributes structured sections to a prompt context.
  *

@@ -20,7 +20,7 @@ use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Exception\AssistantException;
 
 /**
- * Class AbstractLlmStepProcessor
+ * Class AbstractLlmProcessor
  *
  * Base class for pipeline steps that call the LLM API.
  *

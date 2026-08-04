@@ -10,8 +10,19 @@ use Qdrant\Config;
 use Qdrant\Http\Builder;
 use Qdrant\Qdrant;
 
+/**
+ * Class QdrantClientFactory
+ *
+ * Creates native Qdrant SDK clients backed by a timeout-aware Guzzle client.
+ *
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>
+ * @package Madj2k\\AiCore
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ */
 final class QdrantClientFactory implements QdrantClientFactoryInterface
 {
+    /** @inheritDoc */
     public function create(
         VectorStoreConnectionConfigurationInterface $connection,
         RetryPolicy $policy,

@@ -5,8 +5,21 @@ namespace Madj2k\AiCore\Connection\Resilience;
 
 use Psr\Http\Client\NetworkExceptionInterface;
 
+/**
+ * Class ExceptionClassifier
+ *
+ * Extracts HTTP status codes and identifies transient provider failures eligible for retry.
+ *
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>
+ * @package Madj2k\\AiCore
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ */
 final class ExceptionClassifier
 {
+    /**
+     * Determines whether an exception represents a transient failure according to the policy.
+     */
     public function isRetryable(\Throwable $exception, RetryPolicy $policy): bool
     {
         $statusCode = $this->getStatusCode($exception);
@@ -26,6 +39,9 @@ final class ExceptionClassifier
         ) === 1;
     }
 
+    /**
+     * Returns the first valid HTTP status code found in the exception chain.
+     */
     public function getStatusCode(\Throwable $exception): ?int
     {
         for ($current = $exception; $current !== null; $current = $current->getPrevious()) {

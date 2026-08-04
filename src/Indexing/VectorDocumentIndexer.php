@@ -12,8 +12,24 @@ use Madj2k\AiCore\Indexing\Configuration\IndexingConfigurationInterface;
 use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
 use Madj2k\AiCore\Indexing\Identity\SourceIdentityGenerator;
 
+/**
+ * Class VectorDocumentIndexer
+ *
+ * Chunks source documents, creates embeddings and replaces their vectors in a vector store.
+ *
+ * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>
+ * @package Madj2k\\AiCore
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ */
 final readonly class VectorDocumentIndexer
 {
+    /**
+     * @param \Madj2k\AiCore\Connection\Resolver\AiConnectorResolver $aiConnectorResolver AI connector resolver.
+     * @param \Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver $vectorStoreConnectorResolver Vector store connector resolver.
+     * @param \Madj2k\AiCore\Indexing\TextChunker $textChunker Text chunker.
+     * @param \Madj2k\AiCore\Indexing\Identity\SourceIdentityGenerator $sourceIdentityGenerator Source identity generator.
+     */
     public function __construct(
         private AiConnectorResolver $aiConnectorResolver,
         private VectorStoreConnectorResolver $vectorStoreConnectorResolver,
@@ -22,6 +38,9 @@ final readonly class VectorDocumentIndexer
     ) {
     }
 
+    /**
+     * Resolves the collection from an explicit override, indexing configuration or connection default.
+     */
     public function resolveCollection(
         IndexingConfigurationInterface $configuration,
         string $collectionOverride = '',
@@ -40,7 +59,15 @@ final readonly class VectorDocumentIndexer
     }
 
     /**
+     * Indexes one document and returns the number of written vector chunks.
+     *
+     * Existing vectors for the current and explicitly supplied source hashes are replaced before writing.
+     * A dry run performs chunking only and returns the number of chunks that would be processed.
+     *
      * @param array<int, string> $sourceHashesToDelete Previously stored source hashes.
+     * @throws \InvalidArgumentException When the collection name is empty.
+     * @throws \RuntimeException When an AI or vector store connection is missing.
+     * @throws \Throwable When connector resolution or a provider request fails.
      */
     public function index(
         IndexingConfigurationInterface $configuration,

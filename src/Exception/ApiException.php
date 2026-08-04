@@ -19,6 +19,8 @@ namespace Madj2k\AiCore\Exception;
 /**
  * Class ApiException
  *
+ * Represents normalized failures returned by an AI provider API.
+ *
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
