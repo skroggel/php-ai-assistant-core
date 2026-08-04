@@ -96,6 +96,24 @@ interface VectorStoreConnectorInterface
 
 
     /**
+     * Deletes obsolete vector documents for a source while preserving the current index generation.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection Vector store connection.
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection Vector collection.
+     * @param string $sourceHash Source hash.
+     * @param string $indexGeneration Index generation to preserve.
+     * @return \Madj2k\AiCore\Connection\VectorStore\DTO\VectorDeleteResult Delete result.
+     * @throws \Madj2k\AiCore\Exception\VectorDatabaseException
+     */
+    public function deleteObsoleteSourceGenerations(
+        VectorStoreConnectionConfigurationInterface $connection,
+        VectorCollection $collection,
+        string $sourceHash,
+        string $indexGeneration,
+    ): VectorDeleteResult;
+
+
+    /**
      * Deletes a collection.
      *
      * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection Vector store connection.

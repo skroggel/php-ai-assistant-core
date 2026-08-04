@@ -145,15 +145,22 @@ final class IndexableDocument
      * @param int $chunkIndex Chunk index.
      * @param string $chunkText Chunk text.
      * @param string $sourceHash Stable source hash.
+     * @param string $indexGeneration Index generation used for failure-safe replacement.
      * @return array<string, mixed> Payload.
      */
-    public function createPayload(int $chunkIndex, string $chunkText, string $sourceHash): array
+    public function createPayload(
+        int $chunkIndex,
+        string $chunkText,
+        string $sourceHash,
+        string $indexGeneration = '',
+    ): array
     {
         return [
             'text' => $chunkText,
             'meta' => array_merge($this->metadata->toArray(), [
                 'source_hash' => trim($sourceHash),
                 'content_hash' => $this->contentHash,
+                'index_generation' => trim($indexGeneration),
                 'chunk_index' => $chunkIndex,
             ]),
         ];

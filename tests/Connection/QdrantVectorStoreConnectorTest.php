@@ -8,6 +8,8 @@ use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfiguration;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface;
 use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
+use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
+use Madj2k\AiCore\Connection\VectorStore\DTO\VectorDocument;
 use Madj2k\AiCore\Connection\VectorStore\QdrantVectorStoreConnector;
 use Madj2k\AiCore\Exception\VectorDatabaseException;
 use Madj2k\AiCore\Tests\Support\QueueHttpClient;
@@ -75,6 +77,42 @@ final class QdrantVectorStoreConnectorTest extends TestCase
             self::assertSame(2, $exception->getAttempts());
             self::assertTrue($exception->isRetryable());
         }
+    }
+
+    public function testUpsertWaitsForStronglyOrderedCompletion(): void
+    {
+        $httpClient = new QueueHttpClient([
+            $this->jsonResponse(200, ['result' => ['exists' => true]]),
+            $this->jsonResponse(200, ['result' => ['status' => 'completed']]),
+        ]);
+        $connector = new QdrantVectorStoreConnector(clientFactory: $this->factoryFor($httpClient));
+
+        $connector->upsert($this->connection(), new VectorCollection('documents'), [
+            new VectorDocument('point-1', [1.0, 2.0], vectorName: 'documents'),
+        ]);
+
+        self::assertStringContainsString('wait=true', (string)$httpClient->requests[1]->getUri());
+        self::assertStringContainsString('ordering=strong', (string)$httpClient->requests[1]->getUri());
+    }
+
+    public function testDeletesOnlyObsoleteSourceGenerations(): void
+    {
+        $httpClient = new QueueHttpClient([
+            $this->jsonResponse(200, ['result' => ['exists' => true]]),
+            $this->jsonResponse(200, ['result' => ['status' => 'completed']]),
+        ]);
+        $connector = new QdrantVectorStoreConnector(clientFactory: $this->factoryFor($httpClient));
+
+        $connector->deleteObsoleteSourceGenerations(
+            $this->connection(),
+            new VectorCollection('documents'),
+            'source-123',
+            'generation-456',
+        );
+
+        $body = json_decode((string)$httpClient->requests[1]->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('source-123', $body['filter']['must'][0]['match']['value']);
+        self::assertSame('generation-456', $body['filter']['must_not'][0]['match']['value']);
     }
 
     private function connection(): VectorStoreConnectionConfiguration

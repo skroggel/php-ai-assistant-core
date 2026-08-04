@@ -238,7 +238,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 fn () => $this->createClient($connection)
                     ->collections($collection->getName())
                     ->points()
-                    ->upsert($points),
+                    ->upsert($points, ['wait' => 'true', 'ordering' => 'strong']),
             );
 
             return new VectorWriteResult($written, $response);
@@ -417,6 +417,49 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'exception' => $exception,
             ]);
             throw $this->createVectorDatabaseException('deleteBySourceHash', $exception);
+        }
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    public function deleteObsoleteSourceGenerations(
+        VectorStoreConnectionConfigurationInterface $connection,
+        VectorCollection $collection,
+        string $sourceHash,
+        string $indexGeneration,
+    ): VectorDeleteResult {
+        try {
+            $this->ensureCollection($connection, $collection);
+
+            $sourceHash = trim($sourceHash);
+            $indexGeneration = trim($indexGeneration);
+            if ($sourceHash === '' || $indexGeneration === '') {
+                return new VectorDeleteResult(0);
+            }
+
+            $filter = (new Filter())
+                ->addMust(new MatchString('meta.source_hash', $sourceHash))
+                ->addMustNot(new MatchString('meta.index_generation', $indexGeneration));
+
+            $response = $this->executeRequest(
+                'deleteObsoleteSourceGenerations',
+                fn () => $this->createClient($connection)
+                    ->collections($collection->getName())
+                    ->points()
+                    ->deleteByFilter($filter),
+            );
+
+            return new VectorDeleteResult(0, $response);
+        } catch (\Throwable $exception) {
+            $this->logger->error('Qdrant obsolete source generation cleanup failed', [
+                'collection' => $collection->getName(),
+                'source_hash' => $sourceHash,
+                'index_generation' => $indexGeneration,
+                'exception' => $exception,
+            ]);
+            throw $this->createVectorDatabaseException('deleteObsoleteSourceGenerations', $exception);
         }
     }
 

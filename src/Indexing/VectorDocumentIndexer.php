@@ -61,7 +61,7 @@ final readonly class VectorDocumentIndexer
     /**
      * Indexes one document and returns the number of written vector chunks.
      *
-     * Existing vectors for the current and explicitly supplied source hashes are replaced before writing.
+     * New vectors are written before obsolete source generations are removed.
      * A dry run performs chunking only and returns the number of chunks that would be processed.
      *
      * @param array<int, string> $sourceHashesToDelete Previously stored source hashes.
@@ -117,6 +117,7 @@ final readonly class VectorDocumentIndexer
             ->embedBatch($aiConnection, $embeddingRequests);
 
         $sourceHash = $this->sourceIdentityGenerator->createSourceHash($document);
+        $indexGeneration = $this->createIndexGeneration($chunks);
         $vectorDocuments = [];
         foreach ($chunks as $index => $chunkText) {
             $embedding = isset($embeddingResponses[$index])
@@ -129,7 +130,7 @@ final readonly class VectorDocumentIndexer
             $vectorDocuments[] = new VectorDocument(
                 id: $this->sourceIdentityGenerator->createVectorDocumentId($sourceHash, $index),
                 vector: $embedding,
-                payload: $document->createPayload($index, $chunkText, $sourceHash),
+                payload: $document->createPayload($index, $chunkText, $sourceHash, $indexGeneration),
                 vectorName: $collection->getName(),
             );
         }
@@ -141,14 +142,39 @@ final readonly class VectorDocumentIndexer
         $vectorStoreConnector = $this->vectorStoreConnectorResolver->get(
             $vectorStoreConnection->getConnectorIdentifier(),
         );
-        $sourceHashesToDelete[] = $sourceHash;
-        foreach (array_values(array_unique(array_filter(array_map('trim', $sourceHashesToDelete)))) as $hash) {
+        $writeResult = $vectorStoreConnector->upsert($vectorStoreConnection, $collection, $vectorDocuments);
+
+        $sourceHashesToDelete = array_values(array_unique(array_filter(array_map('trim', $sourceHashesToDelete))));
+        foreach ($sourceHashesToDelete as $hash) {
+            if ($hash === $sourceHash) {
+                continue;
+            }
             $vectorStoreConnector->deleteBySourceHash($vectorStoreConnection, $collection, $hash);
         }
 
-        return $vectorStoreConnector
-            ->upsert($vectorStoreConnection, $collection, $vectorDocuments)
-            ->getWritten();
+        $vectorStoreConnector->deleteObsoleteSourceGenerations(
+            $vectorStoreConnection,
+            $collection,
+            $sourceHash,
+            $indexGeneration,
+        );
+
+        return $writeResult->getWritten();
+    }
+
+    /**
+     * Creates a deterministic generation identifier that also changes with chunk boundaries.
+     *
+     * @param array<int, string> $chunks Document chunks.
+     */
+    private function createIndexGeneration(array $chunks): string
+    {
+        $hash = hash_init('sha256');
+        foreach ($chunks as $chunk) {
+            hash_update($hash, strlen($chunk) . ':' . $chunk);
+        }
+
+        return hash_final($hash);
     }
 
     private function positiveOrNull(int $value): ?int
