@@ -17,7 +17,7 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Indexing\Adapter;
 
-use Madj2k\AiCore\Indexing\DTO\IndexableMetadata;
+use Madj2k\AiCore\DTO\DocumentMetadata;
 
 /**
  * Class PlainTextContentAdapter
@@ -61,7 +61,7 @@ final class PlainAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function extract(string $path, IndexableMetadata $metadata): string
+    public function extract(string $path, DocumentMetadata $metadata): string
     {
         return trim((string)file_get_contents($path));
     }

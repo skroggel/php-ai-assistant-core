@@ -18,7 +18,7 @@ namespace Madj2k\AiCore\Indexing\Adapter;
 
 use Madj2k\AiCore\Exception\JsonRecordIdentityException;
 use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
-use Madj2k\AiCore\Indexing\DTO\IndexableMetadata;
+use Madj2k\AiCore\DTO\DocumentMetadata;
 
 /**
  * Class JsonContentAdapter
@@ -62,7 +62,7 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
     /**
      * @inheritDoc
      */
-    public function extract(string $path, IndexableMetadata $metadata): string
+    public function extract(string $path, DocumentMetadata $metadata): string
     {
         /** @var string $raw */
         $raw = (string)file_get_contents($path);
@@ -100,7 +100,7 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
     /**
      * @inheritDoc
      */
-    public function extractDocuments(string $path, IndexableMetadata $metadata): array
+    public function extractDocuments(string $path, DocumentMetadata $metadata): array
     {
         /** @var string $raw */
         $raw = (string)file_get_contents($path);
@@ -128,7 +128,7 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
         /** @var array<int, \Madj2k\AiCore\Indexing\DTO\IndexableDocument> $documents */
         $documents = [];
         foreach ($records as $index => $record) {
-            /** @var \Madj2k\AiCore\Indexing\DTO\IndexableMetadata $recordMetadata */
+            /** @var \Madj2k\AiCore\DTO\DocumentMetadata $recordMetadata */
             $recordMetadata = clone $metadata;
             $content = $this->extractRecord($record, $recordMetadata, $index, $recordIdentities[$index]);
             $documents[] = new IndexableDocument($content, $recordMetadata);
@@ -154,11 +154,11 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
      * Ensures configured JSON source IDs are unique within one multi-document file.
      *
      * @param array<int, mixed> $records Decoded JSON records.
-     * @param \Madj2k\AiCore\Indexing\DTO\IndexableMetadata $metadata Base metadata.
+     * @param \Madj2k\AiCore\DTO\DocumentMetadata $metadata Base metadata.
      * @return void
      * @throws \Madj2k\AiCore\Exception\JsonRecordIdentityException
      */
-    private function assertUniqueConfiguredRecordIds(array $records, IndexableMetadata $metadata): void
+    private function assertUniqueConfiguredRecordIds(array $records, DocumentMetadata $metadata): void
     {
         $sourceIdField = trim((string)($metadata->getAdditional()['source_id_field'] ?? ''));
         if ($sourceIdField === '') {
@@ -213,14 +213,14 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
      * Extracts one JSON record into text and metadata.
      *
      * @param array<int|string, mixed> $record Decoded JSON record.
-     * @param \Madj2k\AiCore\Indexing\DTO\IndexableMetadata $metadata Metadata to enrich.
+     * @param \Madj2k\AiCore\DTO\DocumentMetadata $metadata Metadata to enrich.
      * @param int $index Zero-based record index.
      * @param array{recordId:string,rawRecordId:string,warning:string} $recordIdentity Prepared record identity.
      * @return string Extracted text.
      */
     private function extractRecord(
         array $record,
-        IndexableMetadata $metadata,
+        DocumentMetadata $metadata,
         int $index,
         array $recordIdentity
     ): string
@@ -250,10 +250,10 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
      * Builds collision-safe record identities for one decoded JSON/JSONL file.
      *
      * @param array<int, array<int|string, mixed>> $records Decoded records.
-     * @param \Madj2k\AiCore\Indexing\DTO\IndexableMetadata $metadata Base metadata.
+     * @param \Madj2k\AiCore\DTO\DocumentMetadata $metadata Base metadata.
      * @return array<int, array{recordId:string,rawRecordId:string,warning:string}> Record identities.
      */
-    private function buildRecordIdentities(array $records, IndexableMetadata $metadata): array
+    private function buildRecordIdentities(array $records, DocumentMetadata $metadata): array
     {
         $sourceIdField = trim((string)($metadata->getAdditional()['source_id_field'] ?? ''));
 
@@ -311,12 +311,12 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
     /**
      * Adds record-specific source metadata.
      *
-     * @param \Madj2k\AiCore\Indexing\DTO\IndexableMetadata $metadata Metadata to enrich.
+     * @param \Madj2k\AiCore\DTO\DocumentMetadata $metadata Metadata to enrich.
      * @param int $index Zero-based record index.
      * @param array{recordId:string,rawRecordId:string,warning:string} $recordIdentity Prepared record identity.
      * @return void
      */
-    private function applyRecordIdentity(IndexableMetadata $metadata, int $index, array $recordIdentity): void
+    private function applyRecordIdentity(DocumentMetadata $metadata, int $index, array $recordIdentity): void
     {
         $recordId = $recordIdentity['recordId'];
 
@@ -431,10 +431,10 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
      *
      * @param array<int|string, mixed> $decoded Decoded JSON.
      * @param array<string, string> $fieldMap Metadata key to dot-notation field path map.
-     * @param \Madj2k\AiCore\Indexing\DTO\IndexableMetadata $metadata Metadata to enrich.
+     * @param \Madj2k\AiCore\DTO\DocumentMetadata $metadata Metadata to enrich.
      * @return void
      */
-    private function addConfiguredMetadata(array $decoded, array $fieldMap, IndexableMetadata $metadata): void
+    private function addConfiguredMetadata(array $decoded, array $fieldMap, DocumentMetadata $metadata): void
     {
         foreach ($fieldMap as $metadataKey => $fieldPath) {
             $values = $this->resolvePath($decoded, $fieldPath);

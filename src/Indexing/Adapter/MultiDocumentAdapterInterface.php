@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Indexing\Adapter;
 
 use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
-use Madj2k\AiCore\Indexing\DTO\IndexableMetadata;
+use Madj2k\AiCore\DTO\DocumentMetadata;
 
 /**
  * Interface MultiDocumentAdapterInterface
@@ -35,8 +35,8 @@ interface MultiDocumentAdapterInterface
      * Extracts one or more documents from a source file.
      *
      * @param string $path File path.
-     * @param \Madj2k\AiCore\Indexing\DTO\IndexableMetadata $metadata Base metadata to copy and enrich.
+     * @param \Madj2k\AiCore\DTO\DocumentMetadata $metadata Base metadata to copy and enrich.
      * @return array<int, \Madj2k\AiCore\Indexing\DTO\IndexableDocument> Extracted documents.
      */
-    public function extractDocuments(string $path, IndexableMetadata $metadata): array;
+    public function extractDocuments(string $path, DocumentMetadata $metadata): array;
 }

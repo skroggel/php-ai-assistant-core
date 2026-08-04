@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Tests\Indexing;
 
+use Madj2k\AiCore\DTO\DocumentMetadata;
 use Madj2k\AiCore\Exception\IndexingException;
 use Madj2k\AiCore\Indexing\Adapter\JsonAdapter;
 use Madj2k\AiCore\Indexing\Adapter\PlainAdapter;
@@ -11,6 +12,16 @@ use PHPUnit\Framework\TestCase;
 
 final class AdapterResolverTest extends TestCase
 {
+    public function testAdapterAcceptsCanonicalDocumentMetadata(): void
+    {
+        $metadata = new DocumentMetadata('file', 'readme.txt');
+
+        self::assertSame(
+            'Hello world',
+            (new PlainAdapter())->extract('data://text/plain,Hello%20world', $metadata),
+        );
+    }
+
     public function testResolvesFirstSupportingAdapter(): void
     {
         $resolver = new AdapterResolver([new JsonAdapter(), new PlainAdapter()]);
