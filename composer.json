@@ -1,0 +1,34 @@
+{
+    "name": "madj2k/ai-core",
+    "type": "library",
+    "description": "Framework-independent AI, vector store and indexing core shared by Madj2k integrations.",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "hkulekci/qdrant": "^1.0",
+        "openai-php/client": "^0.10",
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/log": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Madj2k\\AiCore\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Madj2k\\AiCore\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
+    },
+    "scripts": {
+        "test": "phpunit --configuration phpunit.xml.dist"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
