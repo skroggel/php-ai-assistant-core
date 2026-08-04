@@ -54,6 +54,9 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
      */
     protected array $clients = [];
 
+    /** @var array<string, true> */
+    protected array $validatedCollections = [];
+
     protected QdrantClientFactoryInterface $clientFactory;
 
     protected RetryPolicy $retryPolicy;
@@ -129,6 +132,11 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
      */
     public function ensureCollection(VectorStoreConnectionConfigurationInterface $connection, VectorCollection $collection): bool
     {
+        $cacheKey = $this->createCollectionCacheKey($connection, $collection);
+        if (isset($this->validatedCollections[$cacheKey])) {
+            return true;
+        }
+
         try {
             /** @var \Qdrant\Response $response */
             $response = $this->executeRequest(
@@ -141,6 +149,15 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 $result = $response->offsetGet('result');
 
                 if (is_array($result) && !empty($result['exists'])) {
+                    /** @var \Qdrant\Response $infoResponse */
+                    $infoResponse = $this->executeRequest(
+                        'ensureCollection.info',
+                        fn () => $this->createClient($connection)
+                            ->collections($collection->getName())
+                            ->info(),
+                    );
+                    $this->validateCollectionConfiguration($infoResponse, $collection);
+                    $this->validatedCollections[$cacheKey] = true;
                     return true;
                 }
 
@@ -167,6 +184,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                     $created = (bool)$createResponse->offsetGet('result');
 
                     if ($created) {
+                        $this->validatedCollections[$cacheKey] = true;
                         $this->logger->info('Qdrant collection created', [
                             'collection' => $collection->getName(),
                             'vector_size' => $collection->getVectorSize(),
@@ -475,6 +493,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'deleteCollection',
                 fn () => $this->createClient($connection)->collections($collection->getName())->delete(),
             );
+            $this->validatedCollections = [];
 
             return new VectorDeleteResult(0, $response);
         } catch (\Throwable $exception) {
@@ -528,6 +547,57 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
             null,
             false,
         );
+    }
+
+
+    /**
+     * Validates the vector parameters of an existing collection.
+     *
+     * @param \Qdrant\Response $response Collection info response.
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection Expected collection.
+     */
+    private function validateCollectionConfiguration(\Qdrant\Response $response, VectorCollection $collection): void
+    {
+        $result = $response->offsetExists('result') ? $response->offsetGet('result') : null;
+        $vectors = is_array($result) ? ($result['config']['params']['vectors'] ?? null) : null;
+        $vectorParams = is_array($vectors) ? ($vectors[$collection->getName()] ?? null) : null;
+        if (!is_array($vectorParams)) {
+            throw new \UnexpectedValueException(sprintf(
+                'Qdrant collection "%s" does not contain the expected named vector configuration.',
+                $collection->getName(),
+            ));
+        }
+
+        $actualVectorSize = (int)($vectorParams['size'] ?? 0);
+        $actualDistance = trim((string)($vectorParams['distance'] ?? ''));
+        if (
+            $actualVectorSize !== $collection->getVectorSize()
+            || strcasecmp($actualDistance, $collection->getDistance()) !== 0
+        ) {
+            throw new \UnexpectedValueException(sprintf(
+                'Qdrant collection "%s" uses vector size %d and distance "%s"; expected %d and "%s". Recreate the collection and reindex its documents.',
+                $collection->getName(),
+                $actualVectorSize,
+                $actualDistance,
+                $collection->getVectorSize(),
+                $collection->getDistance(),
+            ));
+        }
+    }
+
+
+    /** Creates the cache key for one validated collection configuration. */
+    private function createCollectionCacheKey(
+        VectorStoreConnectionConfigurationInterface $connection,
+        VectorCollection $collection,
+    ): string {
+        return sha1(implode('|', [
+            $connection->getEndpoint(),
+            $connection->getApiKey(),
+            $collection->getName(),
+            (string)$collection->getVectorSize(),
+            $collection->getDistance(),
+        ]));
     }
 
 

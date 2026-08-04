@@ -24,6 +24,8 @@ final class RecordingVectorStoreConnector implements VectorStoreConnectorInterfa
     /** @var array<int, \Madj2k\AiCore\Connection\VectorStore\DTO\VectorDocument> */
     public array $writtenDocuments = [];
 
+    public ?VectorCollection $upsertCollection = null;
+
     public bool $failUpsert = false;
 
     public function getIdentifier(): string { return 'test-vector'; }
@@ -41,6 +43,7 @@ final class RecordingVectorStoreConnector implements VectorStoreConnectorInterfa
         array $documents,
     ): VectorWriteResult {
         $this->operations[] = 'upsert';
+        $this->upsertCollection = $collection;
         if ($this->failUpsert) {
             throw new \RuntimeException('Simulated upsert failure.');
         }

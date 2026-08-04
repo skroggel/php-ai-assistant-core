@@ -15,6 +15,7 @@ use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInt
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
 use Madj2k\AiCore\DTO\DocumentMetadata;
+use Madj2k\AiCore\Exception\IndexingException;
 use Madj2k\AiCore\Indexing\Configuration\IndexingConfigurationInterface;
 use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
 use Madj2k\AiCore\Indexing\Identity\SourceIdentityGenerator;
@@ -43,6 +44,8 @@ final class VectorDocumentIndexerTest extends TestCase
             'cleanup:' . $sourceHash,
         ], $vectorConnector->operations);
         self::assertCount(2, $vectorConnector->writtenDocuments);
+        self::assertSame(2, $vectorConnector->upsertCollection?->getVectorSize());
+        self::assertSame('Dot', $vectorConnector->upsertCollection?->getDistance());
         self::assertSame('documents', $vectorConnector->writtenDocuments[0]->getVectorName());
         self::assertSame($sourceHash, $vectorConnector->writtenDocuments[0]->getPayload()['meta']['source_hash']);
         self::assertSame(
@@ -70,23 +73,65 @@ final class VectorDocumentIndexerTest extends TestCase
         self::assertSame([], $vectorConnector->generationCleanups);
     }
 
+    public function testRejectsEmbeddingDimensionThatDoesNotMatchConnection(): void
+    {
+        $vectorConnector = new RecordingVectorStoreConnector();
+        [$indexer, $configuration, $document] = $this->createFixture(
+            $vectorConnector,
+            vectorSize: 3,
+        );
+
+        $this->expectException(IndexingException::class);
+        $this->expectExceptionMessage('provider returned 2 dimensions, vector store connection expects 3');
+
+        $indexer->index($configuration, $document, 'documents');
+    }
+
+    public function testRejectsInconsistentEmbeddingDimensions(): void
+    {
+        $vectorConnector = new RecordingVectorStoreConnector();
+        [$indexer, $configuration, $document] = $this->createFixture(
+            $vectorConnector,
+            embeddings: [[1.0, 2.0], [1.0, 2.0, 3.0]],
+        );
+
+        $this->expectException(IndexingException::class);
+        $this->expectExceptionMessage('response 1 has 3 dimensions, expected 2');
+
+        $indexer->index($configuration, $document, 'documents');
+    }
+
     /**
+     * @param array<int, array<int, float>> $embeddings
      * @return array{VectorDocumentIndexer,IndexingConfigurationInterface,IndexableDocument,SourceIdentityGenerator}
      */
-    private function createFixture(RecordingVectorStoreConnector $vectorConnector): array
+    private function createFixture(
+        RecordingVectorStoreConnector $vectorConnector,
+        array $embeddings = [[1.0, 2.0], [1.0, 2.0]],
+        int $vectorSize = 2,
+    ): array
     {
-        $aiConnector = new class implements AiConnectorInterface {
+        $aiConnector = new class($embeddings) implements AiConnectorInterface {
+            public function __construct(private readonly array $embeddings) {}
             public function getIdentifier(): string { return 'test-ai'; }
             public function chat(AiConnectionConfigurationInterface $connection, AiRequest $request): AiResponse { return new AiResponse(); }
             public function streamChat(AiConnectionConfigurationInterface $connection, AiRequest $request, callable $onData): void {}
-            public function embed(AiConnectionConfigurationInterface $connection, EmbeddingRequest $request): EmbeddingResponse { return new EmbeddingResponse([1.0, 2.0]); }
+            public function embed(AiConnectionConfigurationInterface $connection, EmbeddingRequest $request): EmbeddingResponse { return new EmbeddingResponse($this->embeddings[0] ?? []); }
             public function embedBatch(AiConnectionConfigurationInterface $connection, array $requests): array
             {
-                return array_map(static fn (): EmbeddingResponse => new EmbeddingResponse([1.0, 2.0]), $requests);
+                return array_map(
+                    fn (int $index): EmbeddingResponse => new EmbeddingResponse($this->embeddings[$index] ?? []),
+                    array_keys($requests),
+                );
             }
         };
         $aiConnection = new AiConnectionConfiguration(apiKey: 'secret', connectorIdentifier: 'test-ai');
-        $vectorConnection = new VectorStoreConnectionConfiguration(endpoint: 'https://vector.test', connectorIdentifier: 'test-vector');
+        $vectorConnection = new VectorStoreConnectionConfiguration(
+            endpoint: 'https://vector.test',
+            connectorIdentifier: 'test-vector',
+            vectorSize: $vectorSize,
+            distance: 'Dot',
+        );
         $configuration = new class($aiConnection, $vectorConnection) implements IndexingConfigurationInterface {
             public function __construct(
                 private AiConnectionConfigurationInterface $ai,

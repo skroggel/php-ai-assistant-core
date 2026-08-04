@@ -8,6 +8,7 @@ use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorDocument;
+use Madj2k\AiCore\Exception\IndexingException;
 use Madj2k\AiCore\Indexing\Configuration\IndexingConfigurationInterface;
 use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
 use Madj2k\AiCore\Indexing\Identity\SourceIdentityGenerator;
@@ -107,7 +108,6 @@ final readonly class VectorDocumentIndexer
             throw new \RuntimeException('No vector store connection configured for indexer.', 1780573402);
         }
 
-        $collection = new VectorCollection($collectionName);
         $embeddingRequests = array_map(
             static fn (string $chunkText): EmbeddingRequest => new EmbeddingRequest($chunkText),
             $chunks,
@@ -116,6 +116,25 @@ final readonly class VectorDocumentIndexer
             ->get($aiConnection->getConnectorIdentifier())
             ->embedBatch($aiConnection, $embeddingRequests);
 
+        $actualVectorSize = $this->resolveVectorSize($embeddingResponses);
+        if ($actualVectorSize === null) {
+            return 0;
+        }
+
+        $configuredVectorSize = $vectorStoreConnection->getVectorSize();
+        if ($actualVectorSize !== $configuredVectorSize) {
+            throw new IndexingException(sprintf(
+                'Embedding dimension mismatch: provider returned %d dimensions, vector store connection expects %d.',
+                $actualVectorSize,
+                $configuredVectorSize,
+            ), 1781002002);
+        }
+
+        $collection = new VectorCollection(
+            $collectionName,
+            $actualVectorSize,
+            $vectorStoreConnection->getDistance(),
+        );
         $sourceHash = $this->sourceIdentityGenerator->createSourceHash($document);
         $indexGeneration = $this->createIndexGeneration($chunks);
         $vectorDocuments = [];
@@ -160,6 +179,36 @@ final readonly class VectorDocumentIndexer
         );
 
         return $writeResult->getWritten();
+    }
+
+    /**
+     * Returns the common dimension of all non-empty embedding responses.
+     *
+     * @param array<int, \Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse> $embeddingResponses Embedding responses.
+     * @throws \Madj2k\AiCore\Exception\IndexingException
+     */
+    private function resolveVectorSize(array $embeddingResponses): ?int
+    {
+        $vectorSize = null;
+        foreach ($embeddingResponses as $index => $embeddingResponse) {
+            $embedding = $embeddingResponse->getEmbedding();
+            if ($embedding === []) {
+                continue;
+            }
+
+            $currentSize = count($embedding);
+            if ($vectorSize !== null && $currentSize !== $vectorSize) {
+                throw new IndexingException(sprintf(
+                    'Inconsistent embedding dimensions: response %d has %d dimensions, expected %d.',
+                    $index,
+                    $currentSize,
+                    $vectorSize,
+                ), 1781002003);
+            }
+            $vectorSize = $currentSize;
+        }
+
+        return $vectorSize;
     }
 
     /**
