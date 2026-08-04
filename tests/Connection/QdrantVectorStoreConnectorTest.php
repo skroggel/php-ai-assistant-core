@@ -7,12 +7,10 @@ use GuzzleHttp\Psr7\Response;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfiguration;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface;
-use Madj2k\AiCore\Connection\Resilience\RetryExecutor;
 use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
 use Madj2k\AiCore\Connection\VectorStore\QdrantVectorStoreConnector;
 use Madj2k\AiCore\Exception\VectorDatabaseException;
 use Madj2k\AiCore\Tests\Support\QueueHttpClient;
-use Madj2k\AiCore\Tests\Support\RecordingSleeper;
 use PHPUnit\Framework\TestCase;
 use Qdrant\Config;
 use Qdrant\Http\Transport;
@@ -45,16 +43,13 @@ final class QdrantVectorStoreConnectorTest extends TestCase
             $this->jsonResponse(503, ['status' => ['error' => 'temporarily unavailable']]),
             $this->jsonResponse(200, ['result' => ['collections' => [['name' => 'documents']]]]),
         ]);
-        $sleeper = new RecordingSleeper();
-        $policy = new RetryPolicy(maxAttempts: 2, initialDelayMilliseconds: 15);
+        $policy = new RetryPolicy(maxAttempts: 2, initialDelayMilliseconds: 0);
         $connector = new QdrantVectorStoreConnector(
             clientFactory: $this->factoryFor($httpClient),
             retryPolicy: $policy,
-            retryExecutor: new RetryExecutor($policy, $sleeper),
         );
 
         self::assertSame(['documents'], $connector->listCollections($this->connection()));
-        self::assertSame([15], $sleeper->delays);
         self::assertCount(2, $httpClient->requests);
     }
 
@@ -68,7 +63,6 @@ final class QdrantVectorStoreConnectorTest extends TestCase
         $connector = new QdrantVectorStoreConnector(
             clientFactory: $this->factoryFor($httpClient),
             retryPolicy: $policy,
-            retryExecutor: new RetryExecutor($policy, new RecordingSleeper()),
         );
 
         try {

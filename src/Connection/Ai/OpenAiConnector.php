@@ -68,19 +68,17 @@ final class OpenAiConnector implements AiConnectorInterface
      * @param \Psr\Log\LoggerInterface|null $logger Logger.
      * @param \Madj2k\AiCore\Connection\Factory\OpenAiClientFactoryInterface|null $clientFactory Client factory.
      * @param \Madj2k\AiCore\Connection\Resilience\RetryPolicy|null $retryPolicy Retry and timeout policy.
-     * @param \Madj2k\AiCore\Connection\Resilience\RetryExecutor|null $retryExecutor Retry executor.
      */
     public function __construct(
         ?LoggerInterface $logger = null,
         ?OpenAiClientFactoryInterface $clientFactory = null,
         ?RetryPolicy $retryPolicy = null,
-        ?RetryExecutor $retryExecutor = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
         $this->clientFactory = $clientFactory ?? new OpenAiClientFactory();
         $this->retryPolicy = $retryPolicy ?? new RetryPolicy();
         $this->exceptionClassifier = new ExceptionClassifier();
-        $this->retryExecutor = $retryExecutor ?? new RetryExecutor(
+        $this->retryExecutor = new RetryExecutor(
             $this->retryPolicy,
             logger: $this->logger,
         );
@@ -268,8 +266,6 @@ final class OpenAiConnector implements AiConnectorInterface
             $connection->getBaseUrl(),
             $connection->getOrganization(),
             $connection->getProject(),
-            (string)$this->retryPolicy->getTimeoutSeconds(),
-            (string)$this->retryPolicy->getConnectTimeoutSeconds(),
         ]));
 
         if (isset($this->clients[$cacheKey])) {

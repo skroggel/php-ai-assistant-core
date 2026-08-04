@@ -13,7 +13,6 @@ namespace Madj2k\AiCore\Connection\VectorStore;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Factory\QdrantClientFactory;
 use Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface;
-use Madj2k\AiCore\Connection\Resilience\ExceptionClassifier;
 use Madj2k\AiCore\Connection\Resilience\RetryExecutor;
 use Madj2k\AiCore\Connection\Resilience\RetryExhaustedException;
 use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
@@ -61,9 +60,6 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
 
     protected RetryExecutor $retryExecutor;
 
-    protected ExceptionClassifier $exceptionClassifier;
-
-
     /**
      * Logger.
      *
@@ -78,19 +74,16 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
      * @param \Psr\Log\LoggerInterface|null $logger Logger.
      * @param \Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface|null $clientFactory Client factory.
      * @param \Madj2k\AiCore\Connection\Resilience\RetryPolicy|null $retryPolicy Retry and timeout policy.
-     * @param \Madj2k\AiCore\Connection\Resilience\RetryExecutor|null $retryExecutor Retry executor.
      */
     public function __construct(
         ?LoggerInterface $logger = null,
         ?QdrantClientFactoryInterface $clientFactory = null,
         ?RetryPolicy $retryPolicy = null,
-        ?RetryExecutor $retryExecutor = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
         $this->clientFactory = $clientFactory ?? new QdrantClientFactory();
         $this->retryPolicy = $retryPolicy ?? new RetryPolicy();
-        $this->exceptionClassifier = new ExceptionClassifier();
-        $this->retryExecutor = $retryExecutor ?? new RetryExecutor(
+        $this->retryExecutor = new RetryExecutor(
             $this->retryPolicy,
             logger: $this->logger,
         );
@@ -489,8 +482,8 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
             $exception,
             'qdrant',
             $operation,
-            $this->exceptionClassifier->getStatusCode($exception),
-            $this->exceptionClassifier->isRetryable($exception, $this->retryPolicy),
+            null,
+            false,
         );
     }
 

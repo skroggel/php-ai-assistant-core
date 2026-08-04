@@ -8,12 +8,26 @@ use Psr\Log\NullLogger;
 
 final readonly class RetryExecutor
 {
+    /** @var \Closure(int): void */
+    private \Closure $sleep;
+
+    private ExceptionClassifier $exceptionClassifier;
+
+    private LoggerInterface $logger;
+
     public function __construct(
         private RetryPolicy $policy,
-        private SleeperInterface $sleeper = new NativeSleeper(),
-        private ExceptionClassifier $exceptionClassifier = new ExceptionClassifier(),
-        private LoggerInterface $logger = new NullLogger(),
-    ) {}
+        ?\Closure $sleep = null,
+        ?LoggerInterface $logger = null,
+    ) {
+        $this->exceptionClassifier = new ExceptionClassifier();
+        $this->logger = $logger ?? new NullLogger();
+        $this->sleep = $sleep ?? static function (int $milliseconds): void {
+            if ($milliseconds > 0) {
+                usleep($milliseconds * 1_000);
+            }
+        };
+    }
 
     /**
      * @template T
@@ -47,10 +61,7 @@ final readonly class RetryExecutor
                     );
                 }
 
-                $delay = $this->policy->getDelayMilliseconds(
-                    $attempt,
-                    $this->exceptionClassifier->getRetryAfterMilliseconds($exception),
-                );
+                $delay = $this->policy->getDelayMilliseconds($attempt);
                 $this->logger->warning('Provider request will be retried', [
                     'provider' => $provider,
                     'operation' => $operationName,
@@ -60,7 +71,7 @@ final readonly class RetryExecutor
                     'status_code' => $statusCode,
                     'exception' => $exception,
                 ]);
-                $this->sleeper->sleep($delay);
+                ($this->sleep)($delay);
             }
         }
     }

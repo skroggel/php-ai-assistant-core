@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Connection\Resilience;
 
 use Psr\Http\Client\NetworkExceptionInterface;
-use Psr\Http\Message\ResponseInterface;
 
 final class ExceptionClassifier
 {
@@ -40,34 +39,6 @@ final class ExceptionClassifier
             $code = $current->getCode();
             if (is_int($code) && $code >= 100 && $code <= 599) {
                 return $code;
-            }
-        }
-
-        return null;
-    }
-
-    public function getRetryAfterMilliseconds(\Throwable $exception): ?int
-    {
-        for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
-            $response = null;
-            if (method_exists($current, 'getResponse')) {
-                $response = $current->getResponse();
-            }
-            if (!$response instanceof ResponseInterface) {
-                continue;
-            }
-
-            $value = trim($response->getHeaderLine('Retry-After'));
-            if ($value === '') {
-                continue;
-            }
-            if (ctype_digit($value)) {
-                return (int)$value * 1_000;
-            }
-
-            $timestamp = strtotime($value);
-            if ($timestamp !== false) {
-                return max(0, ($timestamp - time()) * 1_000);
             }
         }
 

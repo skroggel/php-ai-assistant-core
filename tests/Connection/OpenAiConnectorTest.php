@@ -10,10 +10,8 @@ use Madj2k\AiCore\Connection\Ai\OpenAiConnector;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfiguration;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Factory\OpenAiClientFactoryInterface;
-use Madj2k\AiCore\Connection\Resilience\RetryExecutor;
 use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
 use Madj2k\AiCore\Exception\ApiException;
-use Madj2k\AiCore\Tests\Support\RecordingSleeper;
 use OpenAI\Contracts\ClientContract;
 use OpenAI\Exceptions\ErrorException;
 use OpenAI\Responses\Chat\CreateResponse;
@@ -35,7 +33,6 @@ final class OpenAiConnectorTest extends TestCase
         $connector = new OpenAiConnector(
             clientFactory: $factory,
             retryPolicy: $policy,
-            retryExecutor: new RetryExecutor($policy, new RecordingSleeper()),
         );
 
         $response = $connector->chat($this->connection(), $this->request());
@@ -54,7 +51,6 @@ final class OpenAiConnectorTest extends TestCase
         $connector = new OpenAiConnector(
             clientFactory: $this->factoryFor($client),
             retryPolicy: $policy,
-            retryExecutor: new RetryExecutor($policy, new RecordingSleeper()),
         );
 
         try {
@@ -108,7 +104,6 @@ SSE;
         $connector = new OpenAiConnector(
             clientFactory: $this->factoryFor($client),
             retryPolicy: $policy,
-            retryExecutor: new RetryExecutor($policy, new RecordingSleeper()),
         );
         $chunks = [];
 

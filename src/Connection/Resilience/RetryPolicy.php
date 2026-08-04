@@ -50,12 +50,8 @@ final readonly class RetryPolicy
         return $this->retryableStatusCodes;
     }
 
-    public function getDelayMilliseconds(int $failedAttempt, ?int $retryAfterMilliseconds = null): int
+    public function getDelayMilliseconds(int $failedAttempt): int
     {
-        if ($retryAfterMilliseconds !== null && $retryAfterMilliseconds >= 0) {
-            return min($retryAfterMilliseconds, $this->maximumDelayMilliseconds);
-        }
-
         $delay = (int)round(
             $this->initialDelayMilliseconds * ($this->backoffMultiplier ** max(0, $failedAttempt - 1))
         );
