@@ -26,6 +26,37 @@ composer test
 
 The test suite is framework-independent and does not bootstrap TYPO3.
 
+## Connector resilience
+
+OpenAI and Qdrant clients are created through injectable factories. The default factories use
+Guzzle with explicit request and connection timeouts. Provider requests use bounded exponential
+backoff for transient network errors, rate limits and selected HTTP status codes.
+
+The default policy uses three attempts, a 250 ms initial delay, a 2 second maximum delay, a
+30 second request timeout and a 10 second connection timeout. Streaming requests are retried only
+before the first response chunk has been emitted, preventing duplicate output.
+
+Applications can adjust the policy without implementing a provider connector:
+
+```php
+use Madj2k\AiCore\Connection\Ai\OpenAiConnector;
+use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
+
+$connector = new OpenAiConnector(
+    retryPolicy: new RetryPolicy(
+        maxAttempts: 4,
+        initialDelayMilliseconds: 500,
+        timeoutSeconds: 45.0,
+        connectTimeoutSeconds: 10.0,
+    ),
+);
+```
+
+For isolated tests or custom transports, implement `OpenAiClientFactoryInterface` or
+`QdrantClientFactoryInterface` and inject the factory into the connector. Final provider errors
+expose the provider, operation, HTTP status, retryability and number of attempts through
+`ApiException` or `VectorDatabaseException`.
+
 ## License
 
 GNU General Public License 2.0 or later. See [LICENSE](LICENSE).

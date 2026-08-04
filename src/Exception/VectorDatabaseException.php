@@ -24,4 +24,4 @@ namespace Madj2k\AiCore\Exception;
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
-class VectorDatabaseException extends AppException {}
+class VectorDatabaseException extends ProviderException {}

@@ -16,8 +16,6 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Exception;
 
-use Exception;
-
 /**
  * Class ApiException
  *
@@ -26,4 +24,4 @@ use Exception;
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
-class ApiException extends Exception {}
+class ApiException extends ProviderException {}

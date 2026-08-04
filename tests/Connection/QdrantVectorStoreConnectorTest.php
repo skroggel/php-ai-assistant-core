@@ -1,0 +1,117 @@
+<?php
+declare(strict_types=1);
+
+namespace Madj2k\AiCore\Tests\Connection;
+
+use GuzzleHttp\Psr7\Response;
+use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfiguration;
+use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
+use Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface;
+use Madj2k\AiCore\Connection\Resilience\RetryExecutor;
+use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
+use Madj2k\AiCore\Connection\VectorStore\QdrantVectorStoreConnector;
+use Madj2k\AiCore\Exception\VectorDatabaseException;
+use Madj2k\AiCore\Tests\Support\QueueHttpClient;
+use Madj2k\AiCore\Tests\Support\RecordingSleeper;
+use PHPUnit\Framework\TestCase;
+use Qdrant\Config;
+use Qdrant\Http\Transport;
+use Qdrant\Qdrant;
+
+final class QdrantVectorStoreConnectorTest extends TestCase
+{
+    public function testUsesInjectedClientAndNormalizesCollectionNames(): void
+    {
+        $httpClient = new QueueHttpClient([
+            $this->jsonResponse(200, [
+                'result' => ['collections' => [
+                    ['name' => 'zeta'],
+                    ['name' => 'alpha'],
+                    ['name' => 'alpha'],
+                ]],
+            ]),
+        ]);
+        $factory = $this->factoryFor($httpClient);
+        $connector = new QdrantVectorStoreConnector(clientFactory: $factory);
+
+        self::assertSame(['alpha', 'zeta'], $connector->listCollections($this->connection()));
+        self::assertSame(1, $factory->calls);
+        self::assertCount(1, $httpClient->requests);
+    }
+
+    public function testRetriesTransientQdrantFailure(): void
+    {
+        $httpClient = new QueueHttpClient([
+            $this->jsonResponse(503, ['status' => ['error' => 'temporarily unavailable']]),
+            $this->jsonResponse(200, ['result' => ['collections' => [['name' => 'documents']]]]),
+        ]);
+        $sleeper = new RecordingSleeper();
+        $policy = new RetryPolicy(maxAttempts: 2, initialDelayMilliseconds: 15);
+        $connector = new QdrantVectorStoreConnector(
+            clientFactory: $this->factoryFor($httpClient),
+            retryPolicy: $policy,
+            retryExecutor: new RetryExecutor($policy, $sleeper),
+        );
+
+        self::assertSame(['documents'], $connector->listCollections($this->connection()));
+        self::assertSame([15], $sleeper->delays);
+        self::assertCount(2, $httpClient->requests);
+    }
+
+    public function testExposesStructuredQdrantErrorAfterRetries(): void
+    {
+        $httpClient = new QueueHttpClient([
+            $this->jsonResponse(503, ['status' => ['error' => 'unavailable']]),
+            $this->jsonResponse(503, ['status' => ['error' => 'unavailable']]),
+        ]);
+        $policy = new RetryPolicy(maxAttempts: 2, initialDelayMilliseconds: 0);
+        $connector = new QdrantVectorStoreConnector(
+            clientFactory: $this->factoryFor($httpClient),
+            retryPolicy: $policy,
+            retryExecutor: new RetryExecutor($policy, new RecordingSleeper()),
+        );
+
+        try {
+            $connector->listCollections($this->connection());
+            self::fail('Expected vector database exception was not thrown.');
+        } catch (VectorDatabaseException $exception) {
+            self::assertSame('qdrant', $exception->getProvider());
+            self::assertSame('listCollections', $exception->getOperation());
+            self::assertSame(503, $exception->getStatusCode());
+            self::assertSame(2, $exception->getAttempts());
+            self::assertTrue($exception->isRetryable());
+        }
+    }
+
+    private function connection(): VectorStoreConnectionConfiguration
+    {
+        return new VectorStoreConnectionConfiguration('https://qdrant.test');
+    }
+
+    /** @param array<string, mixed> $body */
+    private function jsonResponse(int $status, array $body): Response
+    {
+        return new Response(
+            $status,
+            ['Content-Type' => 'application/json'],
+            (string)json_encode($body, JSON_THROW_ON_ERROR),
+        );
+    }
+
+    private function factoryFor(QueueHttpClient $httpClient): QdrantClientFactoryInterface
+    {
+        return new class($httpClient) implements QdrantClientFactoryInterface {
+            public int $calls = 0;
+
+            public function __construct(private readonly QueueHttpClient $httpClient) {}
+
+            public function create(
+                VectorStoreConnectionConfigurationInterface $connection,
+                RetryPolicy $policy,
+            ): Qdrant {
+                $this->calls++;
+                return new Qdrant(new Transport($this->httpClient, new Config($connection->getEndpoint())));
+            }
+        };
+    }
+}

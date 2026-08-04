@@ -15,8 +15,14 @@ use Madj2k\AiCore\Connection\Ai\DTO\AiResponse;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
+use Madj2k\AiCore\Connection\Factory\OpenAiClientFactory;
+use Madj2k\AiCore\Connection\Factory\OpenAiClientFactoryInterface;
+use Madj2k\AiCore\Connection\Resilience\ExceptionClassifier;
+use Madj2k\AiCore\Connection\Resilience\RetryExecutor;
+use Madj2k\AiCore\Connection\Resilience\RetryExhaustedException;
+use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
 use Madj2k\AiCore\Exception\ApiException;
-use OpenAI\Client;
+use OpenAI\Contracts\ClientContract;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -43,19 +49,41 @@ final class OpenAiConnector implements AiConnectorInterface
     /**
      * Runtime client cache.
      *
-     * @var array<string, \OpenAI\Client>
+     * @var array<string, \OpenAI\Contracts\ClientContract>
      */
     protected array $clients = [];
+
+    protected OpenAiClientFactoryInterface $clientFactory;
+
+    protected RetryPolicy $retryPolicy;
+
+    protected RetryExecutor $retryExecutor;
+
+    protected ExceptionClassifier $exceptionClassifier;
 
 
     /**
      * Constructor.
      *
      * @param \Psr\Log\LoggerInterface|null $logger Logger.
+     * @param \Madj2k\AiCore\Connection\Factory\OpenAiClientFactoryInterface|null $clientFactory Client factory.
+     * @param \Madj2k\AiCore\Connection\Resilience\RetryPolicy|null $retryPolicy Retry and timeout policy.
+     * @param \Madj2k\AiCore\Connection\Resilience\RetryExecutor|null $retryExecutor Retry executor.
      */
-    public function __construct(?LoggerInterface $logger = null)
-    {
+    public function __construct(
+        ?LoggerInterface $logger = null,
+        ?OpenAiClientFactoryInterface $clientFactory = null,
+        ?RetryPolicy $retryPolicy = null,
+        ?RetryExecutor $retryExecutor = null,
+    ) {
         $this->logger = $logger ?? new NullLogger();
+        $this->clientFactory = $clientFactory ?? new OpenAiClientFactory();
+        $this->retryPolicy = $retryPolicy ?? new RetryPolicy();
+        $this->exceptionClassifier = new ExceptionClassifier();
+        $this->retryExecutor = $retryExecutor ?? new RetryExecutor(
+            $this->retryPolicy,
+            logger: $this->logger,
+        );
     }
 
 
@@ -78,11 +106,15 @@ final class OpenAiConnector implements AiConnectorInterface
 
         try {
             /** @var object $response */
-            $response = $this->createClient($connection)->embeddings()->create(array_merge([
-                'model' => $configuredModel,
-                'input' => $request->getText(),
-                'temperature' => $this->resolveEmbeddingTemperature($connection, $request),
-            ], $connection->getAdditionalOptionsArray(), $request->getOptions()));
+            $response = $this->retryExecutor->execute(
+                'openai',
+                'embed',
+                fn (): object => $this->createClient($connection)->embeddings()->create(array_merge([
+                    'model' => $configuredModel,
+                    'input' => $request->getText(),
+                    'temperature' => $this->resolveEmbeddingTemperature($connection, $request),
+                ], $connection->getAdditionalOptionsArray(), $request->getOptions())),
+            );
 
             /** @var array<int, float> $embedding */
             $embedding = $response->embeddings[0]->embedding ?? [];
@@ -92,13 +124,13 @@ final class OpenAiConnector implements AiConnectorInterface
                 $configuredModel,
                 method_exists($response, 'toArray') ? $response->toArray() : []
             );
-        } catch (\Throwable $exception) {
+        } catch (RetryExhaustedException $exception) {
             $this->logger->error('OpenAI embedding failed', [
                 'operation' => 'embed',
                 'configured_model' => $configuredModel,
                 'exception' => $exception,
             ]);
-            throw new ApiException('Embedding failed: ' . $exception->getMessage(), 1780572973, $exception);
+            throw $this->createApiException('Embedding failed', $exception);
         }
     }
 
@@ -126,20 +158,24 @@ final class OpenAiConnector implements AiConnectorInterface
 
         try {
             /** @var object $response */
-            $response = $this->createClient($connection)->embeddings()->create(array_merge([
-                'model' => $configuredModel,
-                'input' => $texts,
-                'temperature' => $this->resolveEmbeddingTemperature($connection, $firstRequest),
-            ], $connection->getAdditionalOptionsArray(), $firstRequest->getOptions()));
+            $response = $this->retryExecutor->execute(
+                'openai',
+                'embedBatch',
+                fn (): object => $this->createClient($connection)->embeddings()->create(array_merge([
+                    'model' => $configuredModel,
+                    'input' => $texts,
+                    'temperature' => $this->resolveEmbeddingTemperature($connection, $firstRequest),
+                ], $connection->getAdditionalOptionsArray(), $firstRequest->getOptions())),
+            );
 
             return $this->buildEmbeddingResponses($response, $configuredModel);
-        } catch (\Throwable $exception) {
+        } catch (RetryExhaustedException $exception) {
             $this->logger->error('OpenAI batch embedding failed', [
                 'operation' => 'embedBatch',
                 'configured_model' => $configuredModel,
                 'exception' => $exception,
             ]);
-            throw new ApiException('Batch embedding failed: ' . $exception->getMessage(), 1780572973, $exception);
+            throw $this->createApiException('Batch embedding failed', $exception);
         }
     }
 
@@ -149,26 +185,37 @@ final class OpenAiConnector implements AiConnectorInterface
      */
     public function streamChat(AiConnectionConfigurationInterface $connection, AiRequest $request, callable $onData): void
     {
+        $emittedData = false;
         try {
             /** @var array<string, mixed> $payload */
             $payload = $this->buildChatPayload($connection, $request);
 
-            /** @var iterable<object> $stream */
-            $stream = $this->createClient($connection)->chat()->createStreamed($payload);
-
-            foreach ($stream as $event) {
-                if (isset($event->choices[0]->delta->content)) {
-                    $onData($event->choices[0]->delta->content);
-                }
-            }
-        } catch (\Throwable $exception) {
+            $this->retryExecutor->execute(
+                'openai',
+                'streamChat',
+                function () use ($connection, $payload, $onData, &$emittedData): void {
+                    /** @var iterable<object> $stream */
+                    $stream = $this->createClient($connection)->chat()->createStreamed($payload);
+                    foreach ($stream as $event) {
+                        if (isset($event->choices[0]->delta->content)) {
+                            $emittedData = true;
+                            $onData($event->choices[0]->delta->content);
+                        }
+                    }
+                },
+                function (\Throwable $exception) use (&$emittedData): bool {
+                    return !$emittedData
+                        && $this->exceptionClassifier->isRetryable($exception, $this->retryPolicy);
+                },
+            );
+        } catch (RetryExhaustedException $exception) {
             $this->logger->error('OpenAI chat streaming failed', [
                 'operation' => 'streamChat',
                 'model' => $this->resolveChatModel($connection, $request),
                 'message_count' => count($request->getMessages()),
                 'exception' => $exception,
             ]);
-            throw new ApiException('Chat streaming failed: ' . $exception->getMessage(), 1780572973, $exception);
+            throw $this->createApiException('Chat streaming failed', $exception);
         }
     }
 
@@ -180,7 +227,13 @@ final class OpenAiConnector implements AiConnectorInterface
     {
         try {
             /** @var object $response */
-            $response = $this->createClient($connection)->chat()->create($this->buildChatPayload($connection, $request));
+            $response = $this->retryExecutor->execute(
+                'openai',
+                'chat',
+                fn (): object => $this->createClient($connection)->chat()->create(
+                    $this->buildChatPayload($connection, $request),
+                ),
+            );
 
             /** @var array<string, mixed> $rawResponse */
             $rawResponse = method_exists($response, 'toArray') ? $response->toArray() : [];
@@ -189,14 +242,14 @@ final class OpenAiConnector implements AiConnectorInterface
                 (string)($response->choices[0]->message->content ?? ''),
                 $rawResponse
             );
-        } catch (\Throwable $exception) {
+        } catch (RetryExhaustedException $exception) {
             $this->logger->error('OpenAI chat request failed', [
                 'operation' => 'chat',
                 'model' => $this->resolveChatModel($connection, $request),
                 'message_count' => count($request->getMessages()),
                 'exception' => $exception,
             ]);
-            throw new ApiException('Chat request failed: ' . $exception->getMessage(), 1780572973, $exception);
+            throw $this->createApiException('Chat request failed', $exception);
         }
     }
 
@@ -205,9 +258,9 @@ final class OpenAiConnector implements AiConnectorInterface
      * Creates an OpenAI client for the given connection.
      *
      * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface $connection AI connection.
-     * @return \OpenAI\Client OpenAI client.
+     * @return \OpenAI\Contracts\ClientContract OpenAI client.
      */
-    protected function createClient(AiConnectionConfigurationInterface $connection): Client
+    protected function createClient(AiConnectionConfigurationInterface $connection): ClientContract
     {
         /** @var string $cacheKey */
         $cacheKey = sha1(implode('|', [
@@ -215,6 +268,8 @@ final class OpenAiConnector implements AiConnectorInterface
             $connection->getBaseUrl(),
             $connection->getOrganization(),
             $connection->getProject(),
+            (string)$this->retryPolicy->getTimeoutSeconds(),
+            (string)$this->retryPolicy->getConnectTimeoutSeconds(),
         ]));
 
         if (isset($this->clients[$cacheKey])) {
@@ -225,24 +280,24 @@ final class OpenAiConnector implements AiConnectorInterface
             throw new ApiException('Missing OpenAI API key in selected AI connection.', 1780573101);
         }
 
-        /** @var \OpenAI\Factory $factory */
-        $factory = \OpenAI::factory()->withApiKey($connection->getApiKey());
-
-        if ($connection->getBaseUrl() !== '') {
-            $factory = $factory->withBaseUri($connection->getBaseUrl());
-        }
-
-        if ($connection->getOrganization() !== '') {
-            $factory = $factory->withOrganization($connection->getOrganization());
-        }
-
-        if ($connection->getProject() !== '') {
-            $factory = $factory->withProject($connection->getProject());
-        }
-
-        $this->clients[$cacheKey] = $factory->make();
+        $this->clients[$cacheKey] = $this->clientFactory->create($connection, $this->retryPolicy);
 
         return $this->clients[$cacheKey];
+    }
+
+
+    protected function createApiException(string $message, RetryExhaustedException $exception): ApiException
+    {
+        return new ApiException(
+            $message . ': ' . $exception->getMessage(),
+            1780572973,
+            $exception->getPrevious() ?? $exception,
+            $exception->getProvider(),
+            $exception->getOperation(),
+            $exception->getStatusCode(),
+            $exception->isRetryable(),
+            $exception->getAttempts(),
+        );
     }
 
 

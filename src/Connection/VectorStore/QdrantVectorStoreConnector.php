@@ -11,6 +11,12 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Connection\VectorStore;
 
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
+use Madj2k\AiCore\Connection\Factory\QdrantClientFactory;
+use Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface;
+use Madj2k\AiCore\Connection\Resilience\ExceptionClassifier;
+use Madj2k\AiCore\Connection\Resilience\RetryExecutor;
+use Madj2k\AiCore\Connection\Resilience\RetryExhaustedException;
+use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorDeleteResult;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorDocument;
@@ -27,8 +33,6 @@ use Qdrant\Models\Request\CreateCollection;
 use Qdrant\Models\Request\SearchRequest;
 use Qdrant\Models\Request\VectorParams;
 use Qdrant\Models\VectorStruct;
-use Qdrant\Config as QdrantConfig;
-use Qdrant\Http\Builder;
 use Qdrant\Qdrant as Client;
 use Psr\Log\NullLogger;
 
@@ -51,6 +55,14 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
      */
     protected array $clients = [];
 
+    protected QdrantClientFactoryInterface $clientFactory;
+
+    protected RetryPolicy $retryPolicy;
+
+    protected RetryExecutor $retryExecutor;
+
+    protected ExceptionClassifier $exceptionClassifier;
+
 
     /**
      * Logger.
@@ -64,10 +76,24 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
      * Constructor.
      *
      * @param \Psr\Log\LoggerInterface|null $logger Logger.
+     * @param \Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface|null $clientFactory Client factory.
+     * @param \Madj2k\AiCore\Connection\Resilience\RetryPolicy|null $retryPolicy Retry and timeout policy.
+     * @param \Madj2k\AiCore\Connection\Resilience\RetryExecutor|null $retryExecutor Retry executor.
      */
-    public function __construct(?LoggerInterface $logger = null)
-    {
+    public function __construct(
+        ?LoggerInterface $logger = null,
+        ?QdrantClientFactoryInterface $clientFactory = null,
+        ?RetryPolicy $retryPolicy = null,
+        ?RetryExecutor $retryExecutor = null,
+    ) {
         $this->logger = $logger ?? new NullLogger();
+        $this->clientFactory = $clientFactory ?? new QdrantClientFactory();
+        $this->retryPolicy = $retryPolicy ?? new RetryPolicy();
+        $this->exceptionClassifier = new ExceptionClassifier();
+        $this->retryExecutor = $retryExecutor ?? new RetryExecutor(
+            $this->retryPolicy,
+            logger: $this->logger,
+        );
     }
 
 
@@ -99,17 +125,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
             return $this->clients[$cacheKey];
         }
 
-        /** @var \Qdrant\Config $config */
-        $config = new QdrantConfig($connection->getEndpoint());
-
-        if ($connection->getApiKey() !== '') {
-            $config->setApiKey($connection->getApiKey());
-        }
-
-        /** @var \Qdrant\Http\Transport $transport */
-        $transport = (new Builder())->build($config);
-
-        $this->clients[$cacheKey] = new Client($transport);
+        $this->clients[$cacheKey] = $this->clientFactory->create($connection, $this->retryPolicy);
 
         return $this->clients[$cacheKey];
     }
@@ -122,7 +138,10 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
     {
         try {
             /** @var \Qdrant\Response $response */
-            $response = $this->createClient($connection)->collections($collection->getName())->exists();
+            $response = $this->executeRequest(
+                'ensureCollection.exists',
+                fn () => $this->createClient($connection)->collections($collection->getName())->exists(),
+            );
 
             if ($response->offsetExists('result')) {
                 /** @var mixed $result */
@@ -143,7 +162,12 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 );
 
                 /** @var \Qdrant\Response $createResponse */
-                $createResponse = $this->createClient($connection)->collections($collection->getName())->create($createCollection);
+                $createResponse = $this->executeRequest(
+                    'ensureCollection.create',
+                    fn () => $this->createClient($connection)
+                        ->collections($collection->getName())
+                        ->create($createCollection),
+                );
 
                 if ($createResponse->offsetExists('result')) {
                     /** @var bool $created */
@@ -171,7 +195,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'vector_size' => $collection->getVectorSize(),
                 'exception' => $exception,
             ]);
-            throw new VectorDatabaseException($exception->getMessage(), 1780572973, $exception);
+            throw $this->createVectorDatabaseException('ensureCollection', $exception);
         }
     }
 
@@ -216,7 +240,13 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
             }
 
             /** @var mixed $response */
-            $response = $this->createClient($connection)->collections($collection->getName())->points()->upsert($points);
+            $response = $this->executeRequest(
+                'upsert',
+                fn () => $this->createClient($connection)
+                    ->collections($collection->getName())
+                    ->points()
+                    ->upsert($points),
+            );
 
             return new VectorWriteResult($written, $response);
         } catch (\Throwable $exception) {
@@ -225,7 +255,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'vector_count' => count($documents),
                 'exception' => $exception,
             ]);
-            throw new VectorDatabaseException($exception->getMessage(), 1780572973, $exception);
+            throw $this->createVectorDatabaseException('upsert', $exception);
         }
     }
 
@@ -262,10 +292,13 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 ->setWithVector($request->getWithVector());
 
             /** @var \Qdrant\Response $response */
-            $response = $this->createClient($connection)
-                ->collections($request->getCollection())
-                ->points()
-                ->search($searchRequest);
+            $response = $this->executeRequest(
+                'search',
+                fn () => $this->createClient($connection)
+                    ->collections($request->getCollection())
+                    ->points()
+                    ->search($searchRequest),
+            );
         } catch (\Throwable $exception) {
             if (str_contains($exception->getMessage(), 'doesn\'t exist')) {
                 return [];
@@ -279,7 +312,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'with_vector' => $request->getWithVector(),
                 'exception' => $exception,
             ]);
-            throw new VectorDatabaseException($exception->getMessage(), 1780572973, $exception);
+            throw $this->createVectorDatabaseException('search', $exception);
         }
 
         if (!$response->offsetExists('result')) {
@@ -318,7 +351,10 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
     {
         try {
             /** @var \Qdrant\Response $response */
-            $response = $this->createClient($connection)->collections()->list();
+            $response = $this->executeRequest(
+                'listCollections',
+                fn () => $this->createClient($connection)->collections()->list(),
+            );
 
             /** @var mixed $result */
             $result = $response->offsetExists('result') ? $response->offsetGet('result') : [];
@@ -345,7 +381,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'endpoint' => $connection->getEndpoint(),
                 'exception' => $exception,
             ]);
-            throw new VectorDatabaseException($exception->getMessage(), 1780572973, $exception);
+            throw $this->createVectorDatabaseException('listCollections', $exception);
         }
     }
 
@@ -372,10 +408,13 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
 
 
             /** @var mixed $response */
-            $response = $this->createClient($connection)
-                ->collections($collection->getName())
-                ->points()
-                ->deleteByFilter($filter);
+            $response = $this->executeRequest(
+                'deleteBySourceHash',
+                fn () => $this->createClient($connection)
+                    ->collections($collection->getName())
+                    ->points()
+                    ->deleteByFilter($filter),
+            );
 
             return new VectorDeleteResult(0, $response);
         } catch (\Throwable $exception) {
@@ -384,7 +423,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'source_hash' => $sourceHash,
                 'exception' => $exception,
             ]);
-            throw new VectorDatabaseException($exception->getMessage(), 1780572973, $exception);
+            throw $this->createVectorDatabaseException('deleteBySourceHash', $exception);
         }
     }
 
@@ -396,7 +435,10 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
     {
         try {
             /** @var mixed $response */
-            $response = $this->createClient($connection)->collections($collection->getName())->delete();
+            $response = $this->executeRequest(
+                'deleteCollection',
+                fn () => $this->createClient($connection)->collections($collection->getName())->delete(),
+            );
 
             return new VectorDeleteResult(0, $response);
         } catch (\Throwable $exception) {
@@ -404,8 +446,52 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
                 'collection' => $collection->getName(),
                 'exception' => $exception,
             ]);
-            throw new VectorDatabaseException($exception->getMessage(), 1780572973, $exception);
+            throw $this->createVectorDatabaseException('deleteCollection', $exception);
         }
+    }
+
+
+    /**
+     * @template T
+     * @param callable(): T $operation
+     * @return T
+     */
+    protected function executeRequest(string $operationName, callable $operation): mixed
+    {
+        return $this->retryExecutor->execute('qdrant', $operationName, $operation);
+    }
+
+
+    protected function createVectorDatabaseException(
+        string $operation,
+        \Throwable $exception,
+    ): VectorDatabaseException {
+        if ($exception instanceof VectorDatabaseException) {
+            return $exception;
+        }
+
+        if ($exception instanceof RetryExhaustedException) {
+            return new VectorDatabaseException(
+                'Qdrant ' . $operation . ' failed: ' . $exception->getMessage(),
+                1780572973,
+                $exception->getPrevious() ?? $exception,
+                $exception->getProvider(),
+                $exception->getOperation(),
+                $exception->getStatusCode(),
+                $exception->isRetryable(),
+                $exception->getAttempts(),
+            );
+        }
+
+        return new VectorDatabaseException(
+            'Qdrant ' . $operation . ' failed: ' . $exception->getMessage(),
+            1780572973,
+            $exception,
+            'qdrant',
+            $operation,
+            $this->exceptionClassifier->getStatusCode($exception),
+            $this->exceptionClassifier->isRetryable($exception, $this->retryPolicy),
+        );
     }
 
 
