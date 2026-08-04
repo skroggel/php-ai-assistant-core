@@ -70,6 +70,17 @@ final class PipelineTest extends TestCase
         self::assertSame('', $response->answer);
     }
 
+    public function testLegacyFallbackContinuesAfterFailure(): void
+    {
+        $pipeline = $this->failingPipeline();
+
+        $response = $pipeline->run($this->context(), [new PipelineStep(
+            failureStrategy: AssistantPipelineFailureStrategy::Fallback,
+        )]);
+
+        self::assertSame('', $response->answer);
+    }
+
     public function testStopsAfterFailureWhenConfigured(): void
     {
         $this->expectException(\RuntimeException::class);

@@ -24,5 +24,11 @@ enum AssistantPipelineFailureStrategy: string
 {
     case Continue = 'continue';
     case Stop = 'stop';
+
+    /**
+     * Legacy alias for continuing after a failed step.
+     *
+     * @deprecated Use {@see self::Continue}. No separate fallback action is executed.
+     */
     case Fallback = 'fallback';
 }
