@@ -31,14 +31,17 @@ final readonly class PipelineStep implements PipelineStepConfigurationInterface
         private string $stepBehavior = '',
         private string $stepRetrieval = '',
         private string $stepOutput = '',
+        private ?int $uid = null,
+        private string $title = 'Test step',
+        private AssistantPipelineStage $stage = AssistantPipelineStage::PreAnswer,
     ) {
     }
 
-    public function getUid(): ?int { return 1; }
-    public function getTitle(): string { return 'Test step'; }
+    public function getUid(): ?int { return $this->uid; }
+    public function getTitle(): string { return $this->title; }
     public function getType(): AssistantPipelineProcessorType { return $this->type; }
     public function getProcessorIdentifier(): string { return $this->identifier; }
-    public function getStage(): AssistantPipelineStage { return AssistantPipelineStage::PreAnswer; }
+    public function getStage(): AssistantPipelineStage { return $this->stage; }
     public function getIncludeIdentityPrompt(): bool { return $this->includeIdentity; }
     public function getIncludeBehaviorRules(): bool { return $this->includeBehavior; }
     public function getIncludeRetrievalRules(): bool { return $this->includeRetrieval; }

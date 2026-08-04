@@ -101,7 +101,7 @@ final class Pipeline
     ): AssistantResponse {
         $steps = is_array($steps) ? array_values($steps) : iterator_to_array($steps, false);
 
-        foreach ($this->validator->validate($steps) as $validationMessage) {
+        foreach ($this->validator->validate($steps, $this->processorRegistry) as $validationMessage) {
             if ($logContext instanceof PipelineLogMetaData) {
                 $this->pipelineLogger->event('pipeline.validation.warning', $logContext, [
                     'message' => $validationMessage,
