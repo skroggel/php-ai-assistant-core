@@ -12,6 +12,7 @@ namespace Madj2k\AiCore\Assistant\Prompt;
 use Madj2k\AiCore\Assistant\Context\Context;
 use Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface;
 use Madj2k\AiCore\Assistant\Enum\HistoryMode;
+use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\Assistant\Prompt\Context\Formatter;
 use Madj2k\AiCore\Assistant\Prompt\Context\Registry\ContextBuilderRegistry;
 
@@ -137,7 +138,23 @@ final class PromptBuilder
             $parts[] = "[Step Output Rules]\n" . $step->getStepOutputRules();
         }
 
-        $parts[] = 'If assistant rules and step rules conflict, assistant rules have priority.';
+        // Forward enabled runtime options to the language model as prompt instructions.
+        if (in_array($step->getType(), [
+            AssistantPipelineProcessorType::AnswerGenerator,
+            AssistantPipelineProcessorType::QualityGate,
+        ], true)) {
+            $chatOptions = $context->getRequest()->getChatOptions();
+            if ($chatOptions->responseLanguage !== '') {
+                $parts[] = "[Response Language]\nRespond in this language: "
+                    . $chatOptions->responseLanguage
+                    . '. This explicit response language takes priority over the language of the user message, quoted text and retrieved documents.';
+            }
+            if ($chatOptions->plainLanguage) {
+                $parts[] = "[Accessibility Requirements]\nUse plain language. Prefer familiar words, short sentences, short paragraphs and a clear structure. Explain unavoidable technical terms.";
+            }
+        }
+
+        $parts[] = 'Runtime response language and accessibility requirements take priority over assistant and step output preferences. If assistant rules and step rules otherwise conflict, assistant rules have priority.';
 
         return implode("\n\n", array_filter($parts));
     }
