@@ -20,6 +20,7 @@ use Madj2k\AiCore\Assistant\Context\Assistant\AssistantContextFactory;
  * Creates the state object for one pipeline run.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -55,7 +56,8 @@ final readonly class ContextFactory
                 $chatTurnRequest->query,
                 $chatTurnRequest->chatIdentifier,
                 $chatTurnRequest->serverRequest,
-                $chatTurnRequest->runtimeSettings
+                $chatTurnRequest->runtimeSettings,
+                $chatTurnRequest->chatOptions,
             ),
             new Request\History($history),
             new Retrieval\RetrievalResult(),

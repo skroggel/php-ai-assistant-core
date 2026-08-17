@@ -17,6 +17,7 @@ use Madj2k\AiCore\Assistant\Context\Context;
 use Madj2k\AiCore\Assistant\Context\ContextFactory;
 use Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalResult;
 use Madj2k\AiCore\Assistant\DTO\AssistantRequest;
+use Madj2k\AiCore\Assistant\DTO\ChatOptions;
 use Madj2k\AiCore\Assistant\DTO\LastRetrievalResult;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
@@ -29,6 +30,7 @@ use Madj2k\AiCore\Assistant\Pipeline\Processor\ProcessorStreamingInterface;
 use Madj2k\AiCore\Assistant\Pipeline\Registry\ProcessorRegistry;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
+use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Tests\Support\PipelineStep;
 use PHPUnit\Framework\TestCase;
 
@@ -121,11 +123,12 @@ final class OrchestratorStreamingTest extends TestCase
             $pipeline,
             $logger,
             $memory,
+            new AiConnectorResolver([]),
         );
         $chunks = [];
 
         $response = $orchestrator->handleStream(
-            new AssistantRequest('Question', 1, $profile, 'chat-id', null),
+            new AssistantRequest('Question', 1, $profile, 'chat-id', null, new ChatOptions()),
             static function (string $chunk) use (&$chunks): void {
                 $chunks[] = $chunk;
             },

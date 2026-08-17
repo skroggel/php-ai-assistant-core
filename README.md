@@ -26,6 +26,23 @@ composer test
 
 The test suite is framework-independent and does not bootstrap TYPO3.
 
+## Chat options
+
+Host applications pass user-facing preferences as one compact `ChatOptions` object on each
+`AssistantRequest`. It contains the normalized response language, its optional BCP 47 code and
+the plain-language preference. The response language overrides language inferred from the
+question, quoted text or retrieved documents.
+
+The prompt builder applies these preferences only to answer generators and quality gates. Query
+optimization and retrieval remain unaffected. Technical accessibility such as keyboard support,
+focus handling and screen-reader semantics belongs to the host application's frontend and is not
+an optional core setting.
+
+For explicit utility interactions, the orchestrator also provides `handleDirect()`. It uses the
+assistant profile's configured AI connector and default model but bypasses all pipeline processors,
+retrieval and vector-store access. The caller decides when this route is appropriate; AI Core does
+not classify user input. Direct interactions can optionally be written to conversation memory.
+
 ## Public API and extension points
 
 Integrations should depend on the provided interfaces, DTOs, configuration contracts and public

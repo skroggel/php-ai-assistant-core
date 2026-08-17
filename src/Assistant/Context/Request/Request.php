@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Assistant\Context\Request;
 
+use Madj2k\AiCore\Assistant\DTO\ChatOptions;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -17,6 +18,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * Contains the original application request data for a conversational turn.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -56,23 +58,34 @@ final class Request
 
 
     /**
+     * Structured user-facing chat options.
+     *
+     * @var \Madj2k\AiCore\Assistant\DTO\ChatOptions
+     */
+    protected ChatOptions $chatOptions;
+
+
+    /**
      * Constructor.
      *
      * @param string $query Current user query.
      * @param string $chatIdentifier Stable key for the conversation.
      * @param \Psr\Http\Message\ServerRequestInterface|null $serverRequest Current server request.
      * @param array<string,mixed> $runtimeSettings Runtime settings provided by the host application.
+     * @param \Madj2k\AiCore\Assistant\DTO\ChatOptions $chatOptions Structured chat options.
      */
     public function __construct(
         string $query = '',
         string $chatIdentifier = '',
         ?ServerRequestInterface $serverRequest = null,
-        array $runtimeSettings = []
+        array $runtimeSettings = [],
+        ChatOptions $chatOptions = new ChatOptions(),
     ) {
         $this->query = $query;
         $this->chatIdentifier = $chatIdentifier;
         $this->serverRequest = $serverRequest;
         $this->runtimeSettings = $runtimeSettings;
+        $this->chatOptions = $chatOptions;
     }
 
 
@@ -193,5 +206,23 @@ final class Request
     public function setRuntimeSettings(array $runtimeSettings): void
     {
         $this->runtimeSettings = $runtimeSettings;
+    }
+
+
+    /**
+     * Returns the structured chat options.
+     */
+    public function getChatOptions(): ChatOptions
+    {
+        return $this->chatOptions;
+    }
+
+
+    /**
+     * Sets the structured chat options.
+     */
+    public function setChatOptions(ChatOptions $chatOptions): void
+    {
+        $this->chatOptions = $chatOptions;
     }
 }

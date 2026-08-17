@@ -14,10 +14,14 @@ use Madj2k\AiCore\Assistant\Context\ContextFactory;
 use Madj2k\AiCore\Assistant\Configuration\AssistantConfigurationInterface;
 use Madj2k\AiCore\Assistant\DTO\AssistantRequest;
 use Madj2k\AiCore\Assistant\DTO\AssistantResponse;
+use Madj2k\AiCore\Assistant\DTO\DirectInteraction;
 use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
 use Madj2k\AiCore\Assistant\Memory\MemoryInterface;
 use Madj2k\AiCore\Assistant\Pipeline\Pipeline;
 use Madj2k\AiCore\Exception\AssistantException;
+use Madj2k\AiCore\Connection\Ai\DTO\AiMessage;
+use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
+use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 
 /**
  * Class Orchestrator
@@ -25,6 +29,7 @@ use Madj2k\AiCore\Exception\AssistantException;
  * Coordinates history, pipeline execution and tracing for one assistant turn.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -38,13 +43,110 @@ final readonly class Orchestrator
      * @param \Madj2k\AiCore\Assistant\Pipeline\Pipeline $pipeline Pipeline.
      * @param \Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface $pipelineLogger Pipeline logger.
      * @param \Madj2k\AiCore\Assistant\Memory\MemoryInterface $sessionMemory Conversation memory.
+     * @param \Madj2k\AiCore\Connection\Resolver\AiConnectorResolver $aiConnectorResolver AI connector resolver for direct interactions.
      */
     public function __construct(
         private ContextFactory $contextFactory,
         private Pipeline       $pipeline,
         private PipelineLoggerInterface $pipelineLogger,
         private MemoryInterface  $sessionMemory,
+        private AiConnectorResolver $aiConnectorResolver,
     ) {
+    }
+
+
+    /**
+     * Sends an explicit lightweight interaction directly to the configured AI connector.
+     *
+     * No pipeline processor, retrieval or vector-store query is executed. The caller
+     * remains responsible for deciding that a direct interaction is appropriate.
+     *
+     * @param \Madj2k\AiCore\Assistant\DTO\AssistantRequest $assistantRequest Assistant request.
+     * @param \Madj2k\AiCore\Assistant\DTO\DirectInteraction $interaction Direct interaction configuration.
+     * @return \Madj2k\AiCore\Assistant\DTO\AssistantResponse Direct assistant response.
+     * @throws \Throwable
+     */
+    public function handleDirect(
+        AssistantRequest $assistantRequest,
+        DirectInteraction $interaction,
+    ): AssistantResponse {
+        $query = $this->resolveQuery($assistantRequest);
+        $assistantProfile = $this->resolveAssistantProfile($assistantRequest);
+        $aiConnection = $assistantProfile->getAiConnection();
+        if ($aiConnection === null) {
+            throw new AssistantException('No AI connection available for direct interaction.', 1780681001);
+        }
+
+        $logMetaData = $this->pipelineLogger->createMetaData($assistantRequest, 'direct');
+        $messages = $this->buildDirectMessages($assistantRequest, $interaction, $query);
+        $model = $aiConnection->getDefaultModel();
+        $maxTokens = max(1, $interaction->maxTokens);
+        $options = [
+            'model' => $model,
+            'temperature' => $aiConnection->getDefaultTemperature(),
+            'max_tokens' => $maxTokens,
+        ];
+
+        $this->pipelineLogger->startChat($logMetaData, [
+            'route' => 'direct',
+            'remember' => $interaction->remember,
+        ]);
+
+        try {
+            $this->pipelineLogger->logLlmRequest(
+                $logMetaData,
+                'Direct interaction',
+                'direct',
+                array_map(static fn (AiMessage $message): array => [
+                    'role' => $message->getRole(),
+                    'content' => $message->getContent(),
+                    'source' => 'direct',
+                ], $messages),
+                $options,
+            );
+
+            $response = $this->aiConnectorResolver
+                ->get($aiConnection->getConnectorIdentifier())
+                ->chat($aiConnection, new AiRequest(
+                    messages: $messages,
+                    model: $model,
+                    temperature: $aiConnection->getDefaultTemperature(),
+                    maxTokens: $maxTokens,
+                ));
+            $answer = trim($response->getContent());
+            if ($answer === '') {
+                throw new AssistantException('Direct interaction returned an empty answer.', 1780681002);
+            }
+
+            $this->pipelineLogger->logLlmResponse(
+                $logMetaData,
+                'Direct interaction',
+                'direct',
+                $answer,
+                ['usage' => $response->getUsage()],
+            );
+
+            if ($interaction->remember) {
+                $this->sessionMemory->start($assistantRequest->chatIdentifier, $assistantRequest->startTimestamp);
+                $this->sessionMemory->addMessage($assistantRequest->chatIdentifier, 'user', $query);
+                $this->sessionMemory->addMessage($assistantRequest->chatIdentifier, 'assistant', $answer);
+            }
+
+            $this->pipelineLogger->finishChat($logMetaData, [
+                'route' => 'direct',
+                'answer_characters' => strlen($answer),
+            ]);
+
+            return new AssistantResponse($answer, ['route' => 'direct']);
+        } catch (\Throwable $exception) {
+            $this->pipelineLogger->failChat($logMetaData, [
+                'route' => 'direct',
+                'exception_class' => get_class($exception),
+                'exception_message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
     }
 
 
@@ -258,5 +360,36 @@ final readonly class Orchestrator
         $steps = $assistantProfile->getChatPipelineSteps();
 
         return is_array($steps) ? array_values($steps) : iterator_to_array($steps, false);
+    }
+
+
+    /**
+     * Builds provider messages for a direct interaction.
+     *
+     * @param \Madj2k\AiCore\Assistant\DTO\AssistantRequest $assistantRequest Assistant request.
+     * @param \Madj2k\AiCore\Assistant\DTO\DirectInteraction $interaction Direct interaction configuration.
+     * @param string $query Validated direct user input.
+     * @return array<int, \Madj2k\AiCore\Connection\Ai\DTO\AiMessage>
+     */
+    private function buildDirectMessages(
+        AssistantRequest $assistantRequest,
+        DirectInteraction $interaction,
+        string $query,
+    ): array {
+        $systemParts = [trim($interaction->instruction)];
+        $chatOptions = $assistantRequest->chatOptions;
+
+        if ($chatOptions->responseLanguage !== '') {
+            $systemParts[] = 'Respond in this language: ' . $chatOptions->responseLanguage . '.';
+        }
+        if ($chatOptions->plainLanguage) {
+            $systemParts[] = 'Use plain language with familiar words and short sentences.';
+        }
+        $systemParts[] = 'Return plain text only. Do not use Markdown.';
+
+        return [
+            new AiMessage('system', implode("\n\n", array_filter($systemParts))),
+            new AiMessage('user', $query),
+        ];
     }
 }
