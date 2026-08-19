@@ -12,6 +12,7 @@ use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInt
  * Defines the framework-independent configuration required for one assistant profile.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -26,9 +27,6 @@ interface AssistantConfigurationInterface
 
     /** Returns the assistant label shown to users. */
     public function getAssistantLabel(): string;
-
-    /** Returns the vector collection name. */
-    public function getCollection(): string;
 
     /** Returns the assistant identity prompt. */
     public function getIdentityPrompt(): string;

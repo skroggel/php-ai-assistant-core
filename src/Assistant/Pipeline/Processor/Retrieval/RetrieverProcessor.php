@@ -16,6 +16,7 @@ use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
 use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 use Madj2k\AiCore\Assistant\Pipeline\Processor\AbstractRetrieverProcessor;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
+use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorSearchRequest;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
@@ -27,6 +28,7 @@ use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
  *
  * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -63,8 +65,11 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
      */
     public function canProcess(Context $context, PipelineStepConfigurationInterface $step): bool
     {
+        $connection = $this->resolveVectorStoreConnection($context, $step);
+
         return trim($context->getCurrentQuery()) !== ''
-            && trim($context->getAssistant()->getCollection()) !== '';
+            && $connection !== null
+            && $this->resolveCollection($step, $connection, false) !== '';
     }
 
 
@@ -73,11 +78,16 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
      */
     public function process(Context $context, PipelineStepConfigurationInterface $step, ?PipelineLogMetaData $logContext = null): void
     {
+        $vectorStoreConnection = $this->resolveVectorStoreConnection($context, $step);
+        if ($vectorStoreConnection === null) {
+            throw new \RuntimeException('No vector store connection configured for retriever step or assistant profile.', 1780573302);
+        }
+        $collection = $this->resolveCollection($step, $vectorStoreConnection);
 
         if ($logContext instanceof PipelineLogMetaData) {
             $this->pipelineLogger->logRetrievalRequest($logContext, $step->getTitle(), $this->getIdentifier(), [
                 'query' => $context->getCurrentQuery(),
-                'collection' => $context->getAssistant()->getCollection(),
+                'collection' => $collection,
                 'max_retrieval_results' => $step->getMaxRetrievalResults(),
                 'score_threshold' => $step->getScoreThreshold(),
                 'prompt_metadata_fields' => $step->getPromptMetadataFieldList(),
@@ -94,15 +104,10 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
             ->embed($aiConnection, new EmbeddingRequest($context->getCurrentQuery()))
             ->getEmbedding();
 
-        $vectorStoreConnection = $context->getAssistant()->getVectorStoreConnection();
-        if ($vectorStoreConnection === null) {
-            throw new \RuntimeException('No vector store connection configured for assistant profile.', 1780573302);
-        }
-
         $rows = $this->vectorStoreConnectorResolver
             ->get($vectorStoreConnection->getConnectorIdentifier())
             ->search($vectorStoreConnection, new VectorSearchRequest(
-                collection: $context->getAssistant()->getCollection(),
+                collection: $collection,
                 vector: $embedding,
                 limit: $step->getMaxRetrievalResults(),
                 params: [
@@ -111,7 +116,7 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
                 ],
                 withPayload: true,
                 withVector: false,
-                vectorName: $context->getAssistant()->getCollection()
+                vectorName: $collection
             ));
 
 
@@ -141,12 +146,14 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
         }
 
 
-        $context->getRetrieval()->setProcessorIdentifier($this->getIdentifier());
-        $context->getRetrieval()->setRawResults($this->normalizeRawResults($rows));
-
-        foreach ($documents as $document) {
-            $context->getRetrieval()->addResult($document);
-        }
+        $this->storeRetrievalGroup(
+            $context,
+            $step,
+            $this->getIdentifier(),
+            $documents,
+            $this->normalizeRawResults($rows),
+            collection: $collection,
+        );
 
         // trace
         $context->getProcessingTrace()->add('retriever.completed',
@@ -180,5 +187,54 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
         }
 
         return $rawResults;
+    }
+
+
+    /**
+     * Resolves the step-specific connection or the assistant profile default.
+     *
+     * @param Context $context Current assistant context.
+     * @param PipelineStepConfigurationInterface $step Current pipeline step.
+     * @return VectorStoreConnectionConfigurationInterface|null Effective vector store connection.
+     */
+    private function resolveVectorStoreConnection(
+        Context $context,
+        PipelineStepConfigurationInterface $step,
+    ): ?VectorStoreConnectionConfigurationInterface {
+        return $step->getRetrievalVectorStoreConnection()
+            ?? $context->getAssistant()->getVectorStoreConnection();
+    }
+
+
+    /**
+     * Resolves the step-specific collection or the effective connection default.
+     *
+     * @param PipelineStepConfigurationInterface $step Current pipeline step.
+     * @param VectorStoreConnectionConfigurationInterface $connection Effective vector store connection.
+     * @param bool $validateOverride Whether to validate the step override against the connection.
+     * @return string Effective collection name.
+     */
+    private function resolveCollection(
+        PipelineStepConfigurationInterface $step,
+        VectorStoreConnectionConfigurationInterface $connection,
+        bool $validateOverride = true,
+    ): string {
+        $override = trim($step->getRetrievalCollection());
+
+        if ($override !== '') {
+            if (
+                $validateOverride
+                && !in_array($override, $connection->getCollectionList(), true)
+            ) {
+                throw new \RuntimeException(sprintf(
+                    'Collection "%s" is not configured for the selected vector store connection.',
+                    $override,
+                ), 1786047702);
+            }
+
+            return $override;
+        }
+
+        return trim($connection->getDefaultCollection());
     }
 }

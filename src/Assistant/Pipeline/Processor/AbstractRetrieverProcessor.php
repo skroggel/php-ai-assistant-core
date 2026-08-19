@@ -10,6 +10,9 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Assistant\Pipeline\Processor;
 
 use Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface;
+use Madj2k\AiCore\Assistant\Context\Context;
+use Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalGroup;
+use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\DTO\DocumentMetadata;
 
@@ -19,12 +22,53 @@ use Madj2k\AiCore\DTO\DocumentMetadata;
  * Shared helper logic for retriever processors.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
  */
 abstract readonly class AbstractRetrieverProcessor implements ProcessorInterface
 {
+    /**
+     * Stores a complete, named retrieval run using the common merge semantics.
+     *
+     * @param Context $context Current assistant context.
+     * @param PipelineStepConfigurationInterface $step Current pipeline step.
+     * @param string $processorIdentifier Retriever processor identifier.
+     * @param array<int, RetrievalDocument> $documents Normalized retrieval documents.
+     * @param array<int, mixed> $rawResults Source-specific raw results.
+     * @param string $query Effective retrieval query.
+     * @param string $collection Effective vector collection.
+     * @return void
+     */
+    protected function storeRetrievalGroup(
+        Context $context,
+        PipelineStepConfigurationInterface $step,
+        string $processorIdentifier,
+        array $documents,
+        array $rawResults,
+        string $query = '',
+        string $collection = '',
+    ): void {
+        $retrievalTitle = trim($step->getTitle());
+        if ($retrievalTitle === '') {
+            $retrievalTitle = $step->getUid() !== null && $step->getUid() > 0
+                ? 'retrieval-' . $step->getUid()
+                : $processorIdentifier;
+        }
+
+        $context->getRetrieval()->storeGroup(new RetrievalGroup(
+            identifier: $retrievalTitle,
+            processorIdentifier: $processorIdentifier,
+            query: trim($query) !== '' ? trim($query) : $context->getCurrentQuery(),
+            documents: $documents,
+            rawResults: $rawResults,
+            maxContextChunks: $step->getMaxContextChunks(),
+            maxContextCharacters: $step->getMaxContextCharacters(),
+            promptMetadataFields: $step->getPromptMetadataFieldList(),
+            collection: trim($collection),
+        ));
+    }
 
     /**
      * @inheritDoc

@@ -26,6 +26,10 @@ final class RecordingVectorStoreConnector implements VectorStoreConnectorInterfa
 
     public ?VectorCollection $upsertCollection = null;
 
+    public ?VectorSearchRequest $searchRequest = null;
+
+    public ?VectorStoreConnectionConfigurationInterface $searchConnection = null;
+
     public bool $failUpsert = false;
 
     public function getIdentifier(): string { return 'test-vector'; }
@@ -56,6 +60,8 @@ final class RecordingVectorStoreConnector implements VectorStoreConnectorInterfa
         VectorStoreConnectionConfigurationInterface $connection,
         VectorSearchRequest $request,
     ): array {
+        $this->searchConnection = $connection;
+        $this->searchRequest = $request;
         return [];
     }
 

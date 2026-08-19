@@ -9,6 +9,7 @@ namespace Madj2k\AiCore\Connection\Configuration;
  * Immutable framework-independent vector store connection configuration.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -23,6 +24,7 @@ final readonly class VectorStoreConnectionConfiguration implements VectorStoreCo
      * @param string $defaultCollection Default collection name.
      * @param int $vectorSize Default vector dimensions.
      * @param string $distance Default vector distance metric.
+     * @param array<int,string> $collections Collections allowed for retrieval overrides.
      */
     public function __construct(
         private string $endpoint,
@@ -32,6 +34,7 @@ final readonly class VectorStoreConnectionConfiguration implements VectorStoreCo
         private string $defaultCollection = '',
         private int $vectorSize = 1536,
         private string $distance = 'Cosine',
+        private array $collections = [],
     ) {}
 
     /** @inheritDoc */
@@ -45,6 +48,15 @@ final readonly class VectorStoreConnectionConfiguration implements VectorStoreCo
 
     /** @inheritDoc */
     public function getDefaultCollection(): string { return $this->defaultCollection; }
+
+    /** @inheritDoc */
+    public function getCollectionList(): array
+    {
+        return array_values(array_unique(array_filter(array_map(
+            static fn (mixed $collection): string => trim((string)$collection),
+            array_merge([$this->defaultCollection], $this->collections),
+        ))));
+    }
 
     /** @inheritDoc */
     public function getVectorSize(): int { return $this->vectorSize; }

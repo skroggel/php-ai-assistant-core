@@ -84,7 +84,6 @@ final class OrchestratorStreamingTest extends TestCase
             public function getUid(): ?int { return 1; }
             public function getTitle(): string { return 'Test profile'; }
             public function getAssistantLabel(): string { return 'Test assistant'; }
-            public function getCollection(): string { return 'test'; }
             public function getIdentityPrompt(): string { return ''; }
             public function getBehaviorRules(): string { return ''; }
             public function getRetrievalRules(): string { return ''; }
@@ -104,7 +103,6 @@ final class OrchestratorStreamingTest extends TestCase
             }
             public function setLastRetrievalResult(string $chatIdentifier, RetrievalResult $retrievalResult): ?LastRetrievalResult { return null; }
             public function getLastRetrievalResult(string $chatIdentifier): ?LastRetrievalResult { return null; }
-            public function getLastRetrievalDocuments(string $chatIdentifier): array { return []; }
         };
         $logger = $this->createStub(PipelineLoggerInterface::class);
         $logger->method('createMetaData')->willReturn(new PipelineLogMetaData(

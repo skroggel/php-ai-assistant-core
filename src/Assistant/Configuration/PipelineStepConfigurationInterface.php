@@ -7,6 +7,7 @@ use Madj2k\AiCore\Assistant\Enum\AssistantPipelineFailureStrategy;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineStage;
 use Madj2k\AiCore\Assistant\Enum\HistoryMode;
+use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 
 /**
  * Interface PipelineStepConfigurationInterface
@@ -14,6 +15,7 @@ use Madj2k\AiCore\Assistant\Enum\HistoryMode;
  * Defines processor selection, prompt composition and execution limits for one pipeline step.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -76,6 +78,12 @@ interface PipelineStepConfigurationInterface
 
     /** Returns the maximum number of retrieval results. */
     public function getMaxRetrievalResults(): int;
+
+    /** Returns an optional vector store connection override. */
+    public function getRetrievalVectorStoreConnection(): ?VectorStoreConnectionConfigurationInterface;
+
+    /** Returns an optional vector collection override. */
+    public function getRetrievalCollection(): string;
 
     /** Returns the minimum retrieval score. */
     public function getScoreThreshold(): float;

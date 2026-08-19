@@ -10,6 +10,7 @@ use Madj2k\AiCore\Assistant\Context\Context;
 use Madj2k\AiCore\Assistant\Context\Request\History;
 use Madj2k\AiCore\Assistant\Context\Request\Request;
 use Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalResult;
+use Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalGroup;
 use Madj2k\AiCore\Assistant\Context\Trace\ProcessingTrace;
 use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineFailureStrategy;
@@ -39,11 +40,16 @@ final class PipelineTest extends TestCase
             }
         };
         $context = $this->context();
+        $context->getRetrieval()->storeGroup(new RetrievalGroup(
+            identifier: 'search',
+            processorIdentifier: 'test.retriever',
+            query: 'query',
+            documents: [
+                $this->document('one', 'First title', 'https://example.test/page'),
+                $this->document('two', 'Duplicate title', 'https://example.test/page'),
+            ],
+        ));
         $context->getRetrieval()->setAnswerContext('Grounded context');
-        $context->getRetrieval()->setResults([
-            $this->document('one', 'First title', 'https://example.test/page'),
-            $this->document('two', 'Duplicate title', 'https://example.test/page'),
-        ]);
         $pipeline = new Pipeline(
             new ProcessorRegistry([$processor]),
             new PipelineValidator(),

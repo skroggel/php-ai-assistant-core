@@ -26,6 +26,7 @@ use Madj2k\AiCore\Assistant\Pipeline\Processor\ProcessorInterface;
  *
  * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -99,19 +100,20 @@ final readonly class RetrievalReadProcessor implements ProcessorInterface
             );
         }
 
-        $context->getRetrieval()->setProcessorIdentifier(
-            $lastRetrievalResult->retrievalIdentifier !== ''
-                ? $lastRetrievalResult->retrievalIdentifier
-                : self::IDENTIFIER
-        );
-        $context->getRetrieval()->setResults($lastRetrievalResult->documents);
-        $context->getRetrieval()->setRawResults($lastRetrievalResult->rawData);
+        $context->getRetrieval()->replaceGroups($lastRetrievalResult->groups);
 
         $payload = [
             'chat_identifier' => $chatIdentifier,
-            'retrieval_identifier' => $lastRetrievalResult->retrievalIdentifier,
             'document_count' => $lastRetrievalResult->getDocumentCount(),
-            'raw_result_count' => count($lastRetrievalResult->rawData),
+            'raw_result_count' => $lastRetrievalResult->getRawResultCount(),
+            'retrievals' => array_map(
+                static fn ($group): array => [
+                    'identifier' => $group->identifier,
+                    'processor_identifier' => $group->processorIdentifier,
+                    'document_count' => count($group->documents),
+                ],
+                $lastRetrievalResult->groups,
+            ),
             'created_at' => $lastRetrievalResult->createdAt,
         ];
 

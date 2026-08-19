@@ -8,6 +8,7 @@ use Madj2k\AiCore\Assistant\Enum\AssistantPipelineFailureStrategy;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineStage;
 use Madj2k\AiCore\Assistant\Enum\HistoryMode;
+use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 
 final readonly class PipelineStep implements PipelineStepConfigurationInterface
 {
@@ -34,6 +35,8 @@ final readonly class PipelineStep implements PipelineStepConfigurationInterface
         private ?int $uid = null,
         private string $title = 'Test step',
         private AssistantPipelineStage $stage = AssistantPipelineStage::PreAnswer,
+        private ?VectorStoreConnectionConfigurationInterface $retrievalVectorStoreConnection = null,
+        private string $retrievalCollection = '',
     ) {
     }
 
@@ -61,6 +64,8 @@ final readonly class PipelineStep implements PipelineStepConfigurationInterface
     public function getMaxContextCharacters(): int { return $this->maxContextCharacters; }
     public function getPromptMetadataFieldList(): array { return $this->metadataFields; }
     public function getFailureStrategy(): AssistantPipelineFailureStrategy { return $this->failureStrategy; }
+    public function getRetrievalVectorStoreConnection(): ?VectorStoreConnectionConfigurationInterface { return $this->retrievalVectorStoreConnection; }
+    public function getRetrievalCollection(): string { return $this->retrievalCollection; }
     public function isLlmStep(): bool
     {
         return !in_array($this->type, [AssistantPipelineProcessorType::Retriever, AssistantPipelineProcessorType::Memory], true);

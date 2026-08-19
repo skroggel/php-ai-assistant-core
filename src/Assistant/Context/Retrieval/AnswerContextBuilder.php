@@ -19,6 +19,7 @@ use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
  *
  * @internal Prompt context implementations may change independently of the public builder contract.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -34,8 +35,47 @@ final class AnswerContextBuilder
      */
     public function build(array $documents, PipelineStepConfigurationInterface $step): string
     {
-        /** @var int $maxContextChunks */
-        $maxContextChunks = $step->getMaxContextChunks();
+        return $this->buildWithLimits(
+            $documents,
+            $step->getMaxContextChunks(),
+            $step->getMaxContextCharacters(),
+            $step->getPromptMetadataFieldList(),
+        );
+    }
+
+
+    /**
+     * Builds one retrieval group using its individual prompt budget.
+     *
+     * @param RetrievalGroup $group Retrieval group.
+     * @return string Prompt-ready retrieval context.
+     */
+    public function buildGroup(RetrievalGroup $group): string
+    {
+        return $this->buildWithLimits(
+            $group->documents,
+            $group->maxContextChunks,
+            $group->maxContextCharacters,
+            $group->promptMetadataFields,
+        );
+    }
+
+
+    /**
+     * Builds prompt context with explicit retrieval-specific limits.
+     *
+     * @param array<int, RetrievalDocument> $documents Retrieval documents.
+     * @param int $maxContextChunks Maximum number of context chunks.
+     * @param int $maxContextCharacters Maximum number of context characters.
+     * @param array<int, string> $metadataFields Metadata fields included in the prompt.
+     * @return string Prompt-ready retrieval context.
+     */
+    private function buildWithLimits(
+        array $documents,
+        int $maxContextChunks,
+        int $maxContextCharacters,
+        array $metadataFields,
+    ): string {
 
         /** @var array<int,\Madj2k\AiCore\Assistant\DTO\RetrievalDocument> $limitedDocuments */
         $limitedDocuments = $maxContextChunks > 0
@@ -49,12 +89,12 @@ final class AnswerContextBuilder
         $characters = 0;
 
         foreach ($limitedDocuments as $document) {
-            $chunk = $this->formatDocument($document, $step->getPromptMetadataFieldList());
+            $chunk = $this->formatDocument($document, $metadataFields);
             if ($chunk === '') {
                 continue;
             }
 
-            if ($this->exceedsMaximumContextCharacters($characters, $chunk, $step)) {
+            if ($maxContextCharacters > 0 && ($characters + strlen($chunk)) > $maxContextCharacters) {
                 break;
             }
 
@@ -170,23 +210,4 @@ final class AnswerContextBuilder
     }
 
 
-    /**
-     * Checks whether adding the next chunk would exceed the configured context character limit.
-     *
-     * @param int $currentCharacters Current context characters.
-     * @param string $chunk Candidate context chunk.
-     * @param \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step Step configuration.
-     * @return bool Whether the maximum would be exceeded.
-     */
-    private function exceedsMaximumContextCharacters(
-        int $currentCharacters,
-        string $chunk,
-        PipelineStepConfigurationInterface $step
-    ): bool {
-        /** @var int $maxContextCharacters */
-        $maxContextCharacters = $step->getMaxContextCharacters();
-
-        return $maxContextCharacters > 0
-            && ($currentCharacters + strlen($chunk)) > $maxContextCharacters;
-    }
 }

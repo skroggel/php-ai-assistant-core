@@ -31,9 +31,9 @@ final class PipelineValidatorTest extends TestCase
     {
         $steps = [
             new PipelineStep(type: AssistantPipelineProcessorType::QueryOptimizer, stage: AssistantPipelineStage::PreRetrieval, uid: 1),
-            new PipelineStep(type: AssistantPipelineProcessorType::Retriever, stage: AssistantPipelineStage::Retrieval, uid: 2),
+            new PipelineStep(type: AssistantPipelineProcessorType::Retriever, stage: AssistantPipelineStage::Retrieval, uid: 2, title: 'Initial retrieval'),
             new PipelineStep(type: AssistantPipelineProcessorType::QueryOptimizer, stage: AssistantPipelineStage::PostRetrieval, uid: 3),
-            new PipelineStep(type: AssistantPipelineProcessorType::Retriever, stage: AssistantPipelineStage::Retrieval, uid: 4),
+            new PipelineStep(type: AssistantPipelineProcessorType::Retriever, stage: AssistantPipelineStage::Retrieval, uid: 4, title: 'Refined retrieval'),
             new PipelineStep(type: AssistantPipelineProcessorType::ContextOptimizer, stage: AssistantPipelineStage::PostRetrieval, uid: 5),
             new PipelineStep(type: AssistantPipelineProcessorType::AnswerGenerator, stage: AssistantPipelineStage::PreAnswer, uid: 6),
             new PipelineStep(type: AssistantPipelineProcessorType::QualityGate, stage: AssistantPipelineStage::PostAnswer, uid: 7),
@@ -104,6 +104,41 @@ final class PipelineValidatorTest extends TestCase
         (new PipelineValidator())->validate([
             new PipelineStep(uid: 42),
             new PipelineStep(uid: 42),
+        ]);
+    }
+
+    public function testRejectsDuplicateRetrieverStepTitles(): void
+    {
+        $this->expectException(AssistantException::class);
+        $this->expectExceptionMessage('duplicates retriever step title "knowledge"');
+
+        (new PipelineValidator())->validate([
+            new PipelineStep(
+                type: AssistantPipelineProcessorType::Retriever,
+                stage: AssistantPipelineStage::Retrieval,
+                title: 'knowledge',
+            ),
+            new PipelineStep(
+                type: AssistantPipelineProcessorType::Retriever,
+                stage: AssistantPipelineStage::Retrieval,
+                title: 'knowledge',
+            ),
+            new PipelineStep(),
+        ]);
+    }
+
+    public function testRejectsEmptyRetrieverStepTitle(): void
+    {
+        $this->expectException(AssistantException::class);
+        $this->expectExceptionMessage('must define a title that names its retrieval');
+
+        (new PipelineValidator())->validate([
+            new PipelineStep(
+                type: AssistantPipelineProcessorType::Retriever,
+                stage: AssistantPipelineStage::Retrieval,
+                title: '',
+            ),
+            new PipelineStep(),
         ]);
     }
 

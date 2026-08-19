@@ -26,6 +26,7 @@ use Madj2k\AiCore\Exception\AppException;
  *
  * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -100,9 +101,16 @@ final readonly class RetrievalWriteProcessor implements ProcessorInterface
 
         $payload = [
             'chat_identifier' => $chatIdentifier,
-            'retrieval_identifier' => $retrievalResult->getProcessorIdentifier(),
-            'document_count' => count($retrievalResult->getResults()),
-            'raw_result_count' => count($retrievalResult->getRawResults()),
+            'document_count' => $retrievalResult->getDocumentCount(),
+            'raw_result_count' => $retrievalResult->getRawResultCount(),
+            'retrievals' => array_map(
+                static fn ($group): array => [
+                    'identifier' => $group->identifier,
+                    'processor_identifier' => $group->processorIdentifier,
+                    'document_count' => count($group->documents),
+                ],
+                $retrievalResult->getGroups(),
+            ),
             'stored' => $storedRetrievalResult !== null,
         ];
 
