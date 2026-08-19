@@ -27,6 +27,7 @@ use Madj2k\AiCore\Exception\AppException;
  *
  * @internal Register custom pipeline behavior through ProcessorInterface.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -71,7 +72,7 @@ final class ContextOptimizerProcessor extends AbstractLlmProcessor
      */
     public function canProcess(Context $context, PipelineStepConfigurationInterface $step): bool
     {
-        return $context->getRetrieval()->getResults() !== [];
+        return $context->getRetrieval()->getDocumentCount() > 0;
     }
 
 
@@ -91,6 +92,11 @@ final class ContextOptimizerProcessor extends AbstractLlmProcessor
         }
 
         $messages = $this->promptBuilder->buildMessages($context, $step);
+        if ($context->getRetrieval()->getGroups() !== [] && isset($messages[0]['content'])) {
+            $messages[0]['content'] .= "\n\n[Retrieval Attribution Requirement]\n"
+                . 'Preserve every [Retrieval: ...] identifier exactly and keep statements attributed to their retrieval. '
+                . 'You may remove duplicates, but do not merge away the retrieval boundaries.';
+        }
 
         $answerContext = $this->callAi($context, $messages, $step, $logContext);
         $context->getRetrieval()->setAnswerContext($answerContext !== '' ? $answerContext : $rawContext);

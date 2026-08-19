@@ -67,6 +67,15 @@ step; it does not reorder the pipeline. A common retrieval-augmented pipeline is
 6. Answer generator (`pre_answer`)
 7. Optional quality gate (`post_answer`)
 
+Every retriever step has a unique, prompt-visible title and an optional collection
+override. The title also names the retrieval group. Each retriever appends its group to the
+retrievals collected so far. Context chunk and
+character limits are applied to every group independently before the consuming LLM step applies
+its final global context limit. Vector store connections resolve from the retriever-step override
+and then the assistant-profile default. Collections resolve from the step override and then the
+effective connection default. Collection overrides must be included in that connection's configured
+collection list.
+
 The validator uses the following stage and dependency rules:
 
 | Processor type | Expected stage | Dependency |

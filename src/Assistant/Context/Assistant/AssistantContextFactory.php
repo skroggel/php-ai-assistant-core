@@ -17,6 +17,7 @@ use Madj2k\AiCore\Assistant\Configuration\AssistantConfigurationInterface;
  * Converts an assistant configuration into a runtime context object.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -37,7 +38,6 @@ final class AssistantContextFactory
             assistantLabel: trim($assistantProfile->getAssistantLabel()),
             aiConnection: $assistantProfile->getAiConnection(),
             vectorStoreConnection: $assistantProfile->getVectorStoreConnection(),
-            collection: trim($assistantProfile->getCollection()),
             identityPrompt: trim($assistantProfile->getIdentityPrompt()),
             behaviorRules: trim($assistantProfile->getBehaviorRules()),
             retrievalRules: trim($assistantProfile->getRetrievalRules()),

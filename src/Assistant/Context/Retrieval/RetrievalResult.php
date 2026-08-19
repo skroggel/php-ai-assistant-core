@@ -8,14 +8,13 @@ declare(strict_types=1);
  */
 namespace Madj2k\AiCore\Assistant\Context\Retrieval;
 
-use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
-
 /**
  * Class RetrievalResult
  *
- * Holds raw retrieval results and the answer context derived from them.
+ * Holds named retrieval groups and the answer context derived from them.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -23,19 +22,11 @@ use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 final class RetrievalResult
 {
     /**
-     * Raw retrieval results.
+     * Named retrieval groups collected by the pipeline.
      *
-     * @var array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument>
+     * @var array<int, RetrievalGroup>
      */
-    protected array $results = [];
-
-
-    /**
-     * Raw retrieval results.
-     *
-     * @var array<int, mixed>
-     */
-    protected array $rawResults = [];
+    protected array $groups = [];
 
 
     /**
@@ -47,147 +38,91 @@ final class RetrievalResult
 
 
     /**
-     * Processor identifier that produced the current raw retrieval results.
+     * Returns the named retrieval groups.
      *
-     * @var string
+     * @return array<int, RetrievalGroup> Retrieval groups.
      */
-    protected string $processorIdentifier = '';
-
-
-
-    /**
-     * Returns the raw retrieval results.
-     *
-     * @return array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument> Raw retrieval results.
-     */
-    public function getResults(): array
+    public function getGroups(): array
     {
-        return $this->results;
+        return $this->groups;
     }
 
 
     /**
-     * Sets the raw retrieval results.
+     * Replaces all retrieval groups.
      *
-     * @param array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument> $results Raw retrieval results.
+     * @param array<int, RetrievalGroup> $groups Retrieval groups.
      * @return void
      */
-    public function setResults(array $results): void
+    public function replaceGroups(array $groups): void
     {
-        $this->results = [];
+        $this->groups = array_values(array_filter(
+            $groups,
+            static fn (mixed $group): bool => $group instanceof RetrievalGroup,
+        ));
+        $this->answerContext = '';
+    }
 
-        foreach ($results as $result) {
-            if ($result instanceof RetrievalDocument) {
-                $this->results[] = $result;
+
+    /**
+     * Appends one named retrieval group.
+     *
+     * @param RetrievalGroup $group Retrieval group.
+     * @return void
+     */
+    public function storeGroup(RetrievalGroup $group): void
+    {
+        foreach ($this->groups as $existingGroup) {
+            if ($existingGroup->identifier === $group->identifier) {
+                throw new \LogicException(sprintf(
+                    'Retrieval name "%s" is already present in the current pipeline context.',
+                    $group->identifier,
+                ), 1786047701);
             }
         }
+
+        $this->groups[] = $group;
+        $this->answerContext = '';
     }
 
-
     /**
-     * Adds a raw retrieval result.
+     * Returns all normalized documents in retrieval order.
      *
-     * @param \Madj2k\AiCore\Assistant\DTO\RetrievalDocument $result Raw retrieval result.
-     * @return void
+     * @return array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument> Retrieval documents.
      */
-    public function addResult(RetrievalDocument $result): void
+    public function getDocuments(): array
     {
-        $this->results[] = $result;
-    }
-
-
-    /**
-     * Removes all raw retrieval results.
-     *
-     * @return void
-     */
-    public function clearResults(): void
-    {
-        $this->results = [];
-    }
-
-
-    /**
-     * Returns the raw retrieval results.
-     *
-     * @return array<int, mixed> Raw retrieval results.
-     */
-    public function getRawResults(): array
-    {
-        return $this->rawResults;
-    }
-
-
-    /**
-     * Sets the raw retrieval results.
-     *
-     * @param array<int, mixed> $rawResults Raw retrieval results.
-     * @return void
-     */
-    public function setRawResults(array $rawResults): void
-    {
-        $this->rawResults = [];
-        foreach ($rawResults as $rawResult) {
-            if (is_object($rawResult)) {
-                if (method_exists($rawResult, 'toArray')) {
-                    $this->rawResults[] = $rawResult->toArray();
-                }
-            } else {
-                $this->rawResults[] = $rawResult;
-            }
+        $documents = [];
+        foreach ($this->groups as $group) {
+            array_push($documents, ...$group->documents);
         }
+
+        return $documents;
     }
 
 
     /**
-     * Adds a raw retrieval result.
+     * Returns the total number of normalized documents.
      *
-     * @param mixed $rawResult Raw retrieval result.
-     * @return void
+     * @return int Document count.
      */
-    public function addRawResult(mixed $rawResult): void
+    public function getDocumentCount(): int
     {
-        if (is_object($rawResult)) {
-            if (method_exists($rawResult, 'toArray')) {
-                $this->rawResults[] = $rawResult->toArray();
-            }
-        } else {
-            $this->rawResults[] = $rawResult;
-        }
+        return count($this->getDocuments());
     }
 
 
     /**
-     * Removes all raw retrieval results.
+     * Returns the total number of source-specific raw results.
      *
-     * @return void
+     * @return int Raw result count.
      */
-    public function clearRawResults(): void
+    public function getRawResultCount(): int
     {
-        $this->rawResults = [];
-    }
-
-
-    /**
-     * Returns the processor identifier that produced the current raw retrieval results.
-     *
-     * @return string Processor identifier.
-     */
-    public function getProcessorIdentifier(): string
-    {
-        return $this->processorIdentifier;
-    }
-
-
-    /**
-     * Sets the processor identifier that produced the current raw retrieval results.
-     *
-     * @param string $processorIdentifier Processor identifier.
-     * @return void
-     */
-    public function setProcessorIdentifier(string $processorIdentifier): void
-    {
-        $this->processorIdentifier = trim($processorIdentifier);
+        return array_sum(array_map(
+            static fn (RetrievalGroup $group): int => count($group->rawResults),
+            $this->groups,
+        ));
     }
 
 

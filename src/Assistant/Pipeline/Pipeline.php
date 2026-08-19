@@ -25,6 +25,7 @@ use Madj2k\AiCore\Assistant\Pipeline\Registry\ProcessorRegistry;
  * Executes configured chat steps in their sorting order.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -253,9 +254,19 @@ final class Pipeline
             context: [
                 'currentQuery' => $context->getCurrentQuery(),
                 'answerContext' => $context->getRetrieval()->getAnswerContext(),
-                'retrievalCount' => count($context->getRetrieval()->getResults()),
+                'retrievalCount' => $context->getRetrieval()->getDocumentCount(),
+                'retrievals' => array_map(
+                    static fn ($group): array => [
+                        'identifier' => $group->identifier,
+                        'processorIdentifier' => $group->processorIdentifier,
+                        'query' => $group->query,
+                        'collection' => $group->collection,
+                        'documentCount' => count($group->documents),
+                    ],
+                    $context->getRetrieval()->getGroups(),
+                ),
                 'sources' => $this->createFrontendSources(
-                    $context->getRetrieval()->getResults(),
+                    $context->getRetrieval()->getDocuments(),
                     $sourceFields
                 ),
             ]

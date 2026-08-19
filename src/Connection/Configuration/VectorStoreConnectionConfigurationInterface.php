@@ -9,6 +9,7 @@ namespace Madj2k\AiCore\Connection\Configuration;
  * Provides endpoint and collection defaults to vector store connectors.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -26,6 +27,13 @@ interface VectorStoreConnectionConfigurationInterface
 
     /** Returns the default collection name. */
     public function getDefaultCollection(): string;
+
+    /**
+     * Returns all configured collections including the default collection.
+     *
+     * @return array<int, string> Collection names.
+     */
+    public function getCollectionList(): array;
 
     /** Returns the default vector dimensions. */
     public function getVectorSize(): int;

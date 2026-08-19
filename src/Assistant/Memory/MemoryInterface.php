@@ -12,6 +12,7 @@ use Madj2k\AiCore\Assistant\DTO\LastRetrievalResult;
  * Defines conversation history and retrieval state storage for assistant sessions.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -36,11 +37,4 @@ interface MemoryInterface
 
     /** Returns the most recently stored retrieval result. */
     public function getLastRetrievalResult(string $chatIdentifier): ?LastRetrievalResult;
-
-    /**
-     * Returns the documents from the most recently stored retrieval result.
-     *
-     * @return array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument>
-     */
-    public function getLastRetrievalDocuments(string $chatIdentifier): array;
 }

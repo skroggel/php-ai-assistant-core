@@ -18,6 +18,7 @@ use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInt
  * Contains the stable assistant configuration used by every pipeline run.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -65,14 +66,6 @@ final class AssistantContext
 
 
     /**
-     * Vector-store collection used by retrieval steps.
-     *
-     * @var string
-     */
-    protected string $collection = '';
-
-
-    /**
      * Stable assistant identity prompt.
      *
      * @var string
@@ -112,7 +105,6 @@ final class AssistantContext
      * @param string $assistantLabel
      * @param \Madj2k\AiCore\Connection\Domain\Model\AiConnectionConfigurationInterface|null $aiConnection
      * @param \Madj2k\AiCore\Connection\Domain\Model\VectorStoreConnectionConfigurationInterface|null $vectorStoreConnection
-     * @param string $collection
      * @param string $identityPrompt
      * @param string $behaviorRules
      * @param string $retrievalRules
@@ -124,7 +116,6 @@ final class AssistantContext
         string $assistantLabel = '',
         ?AiConnectionConfigurationInterface $aiConnection = null,
         ?VectorStoreConnectionConfigurationInterface $vectorStoreConnection = null,
-        string $collection = '',
         string $identityPrompt = '',
         string $behaviorRules = '',
         string $retrievalRules = '',
@@ -136,7 +127,6 @@ final class AssistantContext
         $this->assistantLabel = $assistantLabel;
         $this->aiConnection = $aiConnection;
         $this->vectorStoreConnection = $vectorStoreConnection;
-        $this->collection = $collection;
         $this->identityPrompt = $identityPrompt;
         $this->behaviorRules = $behaviorRules;
         $this->retrievalRules = $retrievalRules;
@@ -233,29 +223,6 @@ final class AssistantContext
     public function getVectorStoreConnection(): ?VectorStoreConnectionConfigurationInterface
     {
         return $this->vectorStoreConnection;
-    }
-
-
-    /**
-     * Returns the vector-store collection used by retrieval steps.
-     *
-     * @return string Vector-store collection used by retrieval steps.
-     */
-    public function getCollection(): string
-    {
-        return $this->collection;
-    }
-
-
-    /**
-     * Sets the vector-store collection used by retrieval steps.
-     *
-     * @param string $collection Vector-store collection used by retrieval steps.
-     * @return void
-     */
-    public function setCollection(string $collection): void
-    {
-        $this->collection = $collection;
     }
 
 

@@ -22,6 +22,7 @@ use Madj2k\AiCore\Exception\AssistantException;
  * Validates structural dependencies and reports non-blocking configuration warnings.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -42,6 +43,7 @@ final class PipelineValidator
         $errors = [];
         $warnings = [];
         $seenUids = [];
+        $seenRetrieverTitles = [];
         $typeCounts = [];
         $hasAnswerGeneratorOrMemory = false;
         $hasRetrievalSource = false;
@@ -59,6 +61,18 @@ final class PipelineValidator
                     $errors[] = sprintf('%s duplicates pipeline step uid %d.', $label, $uid);
                 }
                 $seenUids[$uid] = true;
+            }
+
+            if ($type === AssistantPipelineProcessorType::Retriever) {
+                $retrieverTitle = trim($step->getTitle());
+                if ($retrieverTitle === '') {
+                    $errors[] = sprintf('%s must define a title that names its retrieval.', $label);
+                } else {
+                    if (isset($seenRetrieverTitles[$retrieverTitle])) {
+                        $errors[] = sprintf('%s duplicates retriever step title "%s".', $label, $retrieverTitle);
+                    }
+                    $seenRetrieverTitles[$retrieverTitle] = true;
+                }
             }
 
             if ($processorRegistry instanceof ProcessorRegistry) {
@@ -139,7 +153,12 @@ final class PipelineValidator
         return array_values(array_unique($warnings));
     }
 
-    /** @return array<int, AssistantPipelineStage> */
+    /**
+     * Returns the pipeline stages allowed for the given processor type.
+     *
+     * @param AssistantPipelineProcessorType $type Processor type.
+     * @return array<int, AssistantPipelineStage> Allowed pipeline stages.
+     */
     private function getAllowedStages(AssistantPipelineProcessorType $type): array
     {
         return match ($type) {
