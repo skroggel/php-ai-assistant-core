@@ -4,7 +4,9 @@
 It has no TYPO3 or Symfony container dependency. Applications provide configuration objects and
 compose connectors and resolvers through constructor injection.
 
-TYPO3 source discovery, persistence, TCA, controllers, session-backed memory, persistent logging and HTTP integration remain in `madj2k/ai-assistant`.
+Conversation memory and its native PHP-session store are part of the core. Host applications can
+replace the store through `SessionStoreInterface`. TYPO3 source discovery, persistence, TCA,
+controllers, persistent logging and HTTP integration remain in `madj2k/ai-assistant`.
 
 ## Requirements
 
