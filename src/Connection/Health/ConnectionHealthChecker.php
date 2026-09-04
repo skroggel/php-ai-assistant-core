@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Connection\Health;
 
+use Madj2k\AiCore\Connection\Ai\DTO\AiMessage;
+use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
+use Madj2k\AiCore\Connection\Ai\DTO\AiResponse;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
+use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
@@ -41,11 +45,56 @@ final readonly class ConnectionHealthChecker
         AiConnectionConfigurationInterface $connection,
         string $probeText = 'AI connection test',
     ): bool {
-        $response = $this->aiConnectorResolver
+        return $this->probeAiEmbedding($connection, $probeText)->getEmbedding() !== [];
+    }
+
+
+    /**
+     * Requests one embedding and returns the complete probe response.
+     *
+     * This allows diagnostics to inspect provider details such as the actual
+     * vector dimension while keeping {@see checkAi()} backward compatible.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface $connection AI connection.
+     * @param string $probeText Probe text.
+     * @return \Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse Embedding probe response.
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
+    public function probeAiEmbedding(
+        AiConnectionConfigurationInterface $connection,
+        string $probeText = 'AI connection test',
+    ): EmbeddingResponse {
+        return $this->aiConnectorResolver
             ->get($connection->getConnectorIdentifier())
             ->embed($connection, new EmbeddingRequest($probeText));
+    }
 
-        return $response->getEmbedding() !== [];
+
+    /**
+     * Requests one minimal chat completion and returns the complete response.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface $connection AI connection.
+     * @param string $probeText Probe prompt.
+     * @param string $model Optional chat model override.
+     * @return \Madj2k\AiCore\Connection\Ai\DTO\AiResponse Chat probe response.
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
+    public function probeAiChat(
+        AiConnectionConfigurationInterface $connection,
+        string $probeText = 'Reply with OK.',
+        string $model = '',
+    ): AiResponse {
+        return $this->aiConnectorResolver
+            ->get($connection->getConnectorIdentifier())
+            ->chat(
+                $connection,
+                new AiRequest(
+                    [new AiMessage('user', $probeText)],
+                    model: $model,
+                    temperature: 0.0,
+                    maxTokens: 64,
+                ),
+            );
     }
 
     /**
