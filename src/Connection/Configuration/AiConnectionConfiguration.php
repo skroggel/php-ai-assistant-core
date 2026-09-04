@@ -29,11 +29,11 @@ final readonly class AiConnectionConfiguration implements AiConnectionConfigurat
      */
     public function __construct(
         private string $apiKey,
-        private string $baseUrl = 'https://api.openai.com/v1',
+        private string $baseUrl = '',
         private string $organization = '',
         private string $project = '',
-        private string $defaultModel = 'gpt-4o-mini',
-        private string $embeddingModel = 'text-embedding-3-small',
+        private string $defaultModel = '',
+        private string $embeddingModel = '',
         private float $defaultTemperature = 0.2,
         private float $embeddingTemperature = 0.0,
         private array $additionalOptions = [],

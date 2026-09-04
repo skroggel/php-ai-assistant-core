@@ -23,6 +23,15 @@ final class ConfigurationTest extends TestCase
         self::assertSame(['seed' => 42], $configuration->getAdditionalOptionsArray());
     }
 
+    public function testAiConfigurationHasProviderNeutralDefaults(): void
+    {
+        $configuration = new AiConnectionConfiguration(apiKey: 'secret');
+
+        self::assertSame('', $configuration->getBaseUrl());
+        self::assertSame('', $configuration->getDefaultModel());
+        self::assertSame('', $configuration->getEmbeddingModel());
+    }
+
     public function testVectorStoreConfigurationIsNormalized(): void
     {
         $configuration = new VectorStoreConnectionConfiguration('https://qdrant.test/');

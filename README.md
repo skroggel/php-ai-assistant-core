@@ -135,7 +135,7 @@ PSR log-level configuration.
 
 ## Connector resilience
 
-OpenAI and Qdrant clients are created through injectable factories. The default factories use
+OpenAI, Gemini and Qdrant clients are created through injectable factories. The default factories use
 Guzzle with explicit request and connection timeouts. Provider requests use bounded exponential
 backoff for transient network errors, rate limits and selected HTTP status codes.
 
@@ -159,10 +159,10 @@ $connector = new OpenAiConnector(
 );
 ```
 
-For isolated tests or custom transports, implement `OpenAiClientFactoryInterface` or
-`QdrantClientFactoryInterface` and inject the factory into the connector. Final provider errors
-expose the provider, operation, HTTP status, retryability and number of attempts through
-`ApiException` or `VectorDatabaseException`.
+For isolated tests or custom transports, implement `OpenAiClientFactoryInterface`,
+`GeminiClientFactoryInterface` or `QdrantClientFactoryInterface` and inject the factory into the
+connector. Final provider errors expose the provider, operation, HTTP status, retryability and
+number of attempts through `ApiException` or `VectorDatabaseException`.
 
 ## License
 
