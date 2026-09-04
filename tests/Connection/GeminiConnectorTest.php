@@ -33,7 +33,7 @@ use Psr\Http\Message\RequestInterface;
  *
  * Verifies Gemini payload mapping, streaming, embeddings and retry handling.
  *
- * @author Maximilian Fäßer <maximilian@faesslerweb.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -147,7 +147,10 @@ SSE;
         ], $history);
         $connection = $this->connection([
             'chat' => ['generationConfig' => ['topP' => 0.8]],
-            'embedding' => ['outputDimensionality' => 1536],
+            'embedding' => [
+                'outputDimensionality' => 3072,
+                'embedContentConfig' => ['autoTruncate' => true],
+            ],
         ]);
 
         $single = $connector->embed($connection, new EmbeddingRequest('eins'));
@@ -162,6 +165,17 @@ SSE;
         self::assertStringEndsWith(':embedContent', (string)$this->historyRequest($history, 0)->getUri());
         self::assertStringEndsWith(':batchEmbedContents', (string)$this->historyRequest($history, 1)->getUri());
 
+        /** @var array<string, mixed> $singlePayload */
+        $singlePayload = json_decode(
+            (string)$this->historyRequest($history, 0)->getBody(),
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+        self::assertArrayNotHasKey('outputDimensionality', $singlePayload);
+        self::assertSame(1536, $singlePayload['embedContentConfig']['outputDimensionality']);
+        self::assertTrue($singlePayload['embedContentConfig']['autoTruncate']);
+
         /** @var array<string, mixed> $batchPayload */
         $batchPayload = json_decode(
             (string)$this->historyRequest($history, 1)->getBody(),
@@ -172,7 +186,12 @@ SSE;
         self::assertSame('models/gemini-embedding-test', $batchPayload['requests'][0]['model']);
         self::assertSame('zwei', $batchPayload['requests'][0]['content']['parts'][0]['text']);
         self::assertSame('drei', $batchPayload['requests'][1]['content']['parts'][0]['text']);
-        self::assertSame(1536, $batchPayload['requests'][0]['outputDimensionality']);
+        self::assertArrayNotHasKey('outputDimensionality', $batchPayload['requests'][0]);
+        self::assertSame(
+            1536,
+            $batchPayload['requests'][0]['embedContentConfig']['outputDimensionality'],
+        );
+        self::assertTrue($batchPayload['requests'][0]['embedContentConfig']['autoTruncate']);
         self::assertArrayNotHasKey('chat', $batchPayload['requests'][0]);
     }
 

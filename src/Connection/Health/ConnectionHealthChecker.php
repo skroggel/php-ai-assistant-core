@@ -98,26 +98,38 @@ final readonly class ConnectionHealthChecker
     }
 
     /**
-     * Verifies a vector store connection by ensuring a collection exists.
+     * Ensures that an explicitly supplied vector collection exists and is compatible.
      *
-     * If no collection is supplied, the configured default or a dedicated probe collection is used.
+     * Use {@see probeVectorStore()} for a non-mutating connectivity check.
      *
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection Vector-store connection.
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection Expected collection configuration.
+     * @return bool True when the collection exists and is compatible.
      * @throws \Throwable When connector resolution or the provider request fails.
      */
     public function checkVectorStore(
         VectorStoreConnectionConfigurationInterface $connection,
-        ?VectorCollection $collection = null,
+        VectorCollection $collection,
     ): bool {
-        $collection ??= new VectorCollection(
-            $connection->getDefaultCollection() !== ''
-                ? $connection->getDefaultCollection()
-                : '_connection_test',
-            $connection->getVectorSize(),
-            $connection->getDistance(),
-        );
-
         return $this->vectorStoreConnectorResolver
             ->get($connection->getConnectorIdentifier())
             ->ensureCollection($connection, $collection);
+    }
+
+
+    /**
+     * Verifies vector-store connectivity without creating or validating a collection.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection Vector-store connection.
+     * @return bool True when the vector store can list its collections.
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
+    public function probeVectorStore(VectorStoreConnectionConfigurationInterface $connection): bool
+    {
+        $this->vectorStoreConnectorResolver
+            ->get($connection->getConnectorIdentifier())
+            ->listCollections($connection);
+
+        return true;
     }
 }

@@ -15,9 +15,12 @@ use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\AiResponse;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfiguration;
+use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfiguration;
 use Madj2k\AiCore\Connection\Health\ConnectionHealthChecker;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
+use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
+use Madj2k\AiCore\Connection\VectorStore\VectorStoreConnectorInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,7 +28,7 @@ use PHPUnit\Framework\TestCase;
  *
  * Verifies diagnostic probes for AI provider connections.
  *
- * @author Maximilian Fäßlär <maximilian@faesslerweb.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -68,6 +71,47 @@ final class ConnectionHealthCheckerTest extends TestCase
 
         self::assertSame('OK', $response->getContent());
         self::assertSame('provider-model', $receivedModel);
+    }
+
+
+    public function testVectorStoreProbeDoesNotCreateACollection(): void
+    {
+        $connector = $this->createMock(VectorStoreConnectorInterface::class);
+        $connector->method('getIdentifier')->willReturn('test-vector');
+        $connector->expects(self::once())->method('listCollections')->willReturn(['existing']);
+        $connector->expects(self::never())->method('ensureCollection');
+        $checker = new ConnectionHealthChecker(
+            new AiConnectorResolver([]),
+            new VectorStoreConnectorResolver([$connector]),
+        );
+
+        self::assertTrue($checker->probeVectorStore(new VectorStoreConnectionConfiguration(
+            endpoint: 'https://vector.example.test',
+            connectorIdentifier: 'test-vector',
+        )));
+    }
+
+
+    public function testVectorStoreCheckEnsuresExplicitCollection(): void
+    {
+        $connection = new VectorStoreConnectionConfiguration(
+            endpoint: 'https://vector.example.test',
+            connectorIdentifier: 'test-vector',
+        );
+        $collection = new VectorCollection('documents', 1536, 'Cosine');
+        $connector = $this->createMock(VectorStoreConnectorInterface::class);
+        $connector->method('getIdentifier')->willReturn('test-vector');
+        $connector->expects(self::once())
+            ->method('ensureCollection')
+            ->with($connection, $collection)
+            ->willReturn(true);
+        $connector->expects(self::never())->method('listCollections');
+        $checker = new ConnectionHealthChecker(
+            new AiConnectorResolver([]),
+            new VectorStoreConnectorResolver([$connector]),
+        );
+
+        self::assertTrue($checker->checkVectorStore($connection, $collection));
     }
 
 

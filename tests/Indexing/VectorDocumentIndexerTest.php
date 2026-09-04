@@ -78,13 +78,27 @@ final class VectorDocumentIndexerTest extends TestCase
         $vectorConnector = new RecordingVectorStoreConnector();
         [$indexer, $configuration, $document] = $this->createFixture(
             $vectorConnector,
-            vectorSize: 3,
+            embeddingDimension: 3,
         );
 
         $this->expectException(IndexingException::class);
-        $this->expectExceptionMessage('provider returned 2 dimensions, vector store connection expects 3');
+        $this->expectExceptionMessage('provider returned 2 dimensions, AI connection configuration expects 3');
 
         $indexer->index($configuration, $document, 'documents');
+    }
+
+    public function testAiConnectionDimensionDefinesVectorCollectionDimension(): void
+    {
+        $vectorConnector = new RecordingVectorStoreConnector();
+        [$indexer, $configuration, $document] = $this->createFixture(
+            $vectorConnector,
+            embeddingDimension: 2,
+        );
+
+        $written = $indexer->index($configuration, $document, 'documents');
+
+        self::assertSame(2, $written);
+        self::assertSame(2, $vectorConnector->upsertCollection?->getVectorSize());
     }
 
     public function testRejectsInconsistentEmbeddingDimensions(): void
@@ -108,7 +122,7 @@ final class VectorDocumentIndexerTest extends TestCase
     private function createFixture(
         RecordingVectorStoreConnector $vectorConnector,
         array $embeddings = [[1.0, 2.0], [1.0, 2.0]],
-        int $vectorSize = 2,
+        int $embeddingDimension = 2,
     ): array
     {
         $aiConnector = new class($embeddings) implements AiConnectorInterface {
@@ -125,11 +139,14 @@ final class VectorDocumentIndexerTest extends TestCase
                 );
             }
         };
-        $aiConnection = new AiConnectionConfiguration(apiKey: 'secret', connectorIdentifier: 'test-ai');
+        $aiConnection = new AiConnectionConfiguration(
+            apiKey: 'secret',
+            connectorIdentifier: 'test-ai',
+            embeddingDimension: $embeddingDimension,
+        );
         $vectorConnection = new VectorStoreConnectionConfiguration(
             endpoint: 'https://vector.test',
             connectorIdentifier: 'test-vector',
-            vectorSize: $vectorSize,
             distance: 'Dot',
         );
         $configuration = new class($aiConnection, $vectorConnection) implements IndexingConfigurationInterface {

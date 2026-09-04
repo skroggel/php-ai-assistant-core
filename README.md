@@ -54,6 +54,17 @@ Classes marked with `@internal` are bundled implementations or provider-specific
 change without backward-compatibility guarantees and should not be extended or referenced by
 integrations. The annotation does not restrict direct use in tests.
 
+### Embedding-dimension API migration
+
+Embedding dimensions belong to `AiConnectionConfigurationInterface` and are returned by
+`getEmbeddingDimension()`. They are no longer part of
+`VectorStoreConnectionConfigurationInterface`; `getVectorSize()` and the `vectorSize` constructor
+argument have been removed from that configuration.
+
+`ConnectionHealthChecker::checkVectorStore()` now requires an explicit `VectorCollection` and
+validates or creates that collection. Use `ConnectionHealthChecker::probeVectorStore()` when only a
+non-mutating connectivity check is required.
+
 ## Pipeline configuration
 
 Pipeline steps run in their configured order. Their stage describes the semantic position of the

@@ -30,6 +30,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame('', $configuration->getBaseUrl());
         self::assertSame('', $configuration->getDefaultModel());
         self::assertSame('', $configuration->getEmbeddingModel());
+        self::assertSame(1536, $configuration->getEmbeddingDimension());
     }
 
     public function testVectorStoreConfigurationIsNormalized(): void
@@ -40,5 +41,15 @@ final class ConfigurationTest extends TestCase
         self::assertSame('qdrant', $configuration->getConnectorIdentifier());
         self::assertSame('', $configuration->getApiKey());
         self::assertSame('', $configuration->getDefaultCollection());
+    }
+
+    public function testEmbeddingDimensionCanBeConfiguredOnAiConnection(): void
+    {
+        $configuration = new AiConnectionConfiguration(
+            apiKey: 'secret',
+            embeddingDimension: 3072,
+        );
+
+        self::assertSame(3072, $configuration->getEmbeddingDimension());
     }
 }

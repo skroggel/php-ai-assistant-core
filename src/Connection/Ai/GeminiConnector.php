@@ -33,7 +33,7 @@ use Psr\Log\NullLogger;
  *
  * Provides Gemini chat and embedding operations through the provider REST API.
  *
- * @author Maximilian Fäßer <maximilian@faesslerweb.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
@@ -343,12 +343,24 @@ final class GeminiConnector implements AiConnectorInterface
         EmbeddingRequest $request,
         string $model,
     ): array {
-        return array_replace_recursive([
+        $payload = array_replace_recursive([
             'model' => 'models/' . $this->normalizeModel($model),
             'content' => [
                 'parts' => [['text' => $request->getText()]],
             ],
         ], $this->resolveConnectionOptions($connection, 'embedding'), $request->getOptions());
+
+        unset($payload['outputDimensionality']);
+
+        if ($connection->getEmbeddingDimension() > 0) {
+            $embedContentConfig = is_array($payload['embedContentConfig'] ?? null)
+                ? $payload['embedContentConfig']
+                : [];
+            $embedContentConfig['outputDimensionality'] = $connection->getEmbeddingDimension();
+            $payload['embedContentConfig'] = $embedContentConfig;
+        }
+
+        return $payload;
     }
 
 

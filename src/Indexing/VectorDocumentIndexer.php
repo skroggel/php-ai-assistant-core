@@ -36,8 +36,7 @@ final readonly class VectorDocumentIndexer
         private VectorStoreConnectorResolver $vectorStoreConnectorResolver,
         private TextChunker $textChunker,
         private SourceIdentityGenerator $sourceIdentityGenerator,
-    ) {
-    }
+    ) {}
 
     /**
      * Resolves the collection from an explicit override, indexing configuration or connection default.
@@ -121,10 +120,16 @@ final readonly class VectorDocumentIndexer
             return 0;
         }
 
-        $configuredVectorSize = $vectorStoreConnection->getVectorSize();
+        $configuredVectorSize = $aiConnection->getEmbeddingDimension();
+        if ($configuredVectorSize <= 0) {
+            throw new IndexingException(
+                'The AI connection embedding dimension must be greater than zero.',
+                1781002003,
+            );
+        }
         if ($actualVectorSize !== $configuredVectorSize) {
             throw new IndexingException(sprintf(
-                'Embedding dimension mismatch: provider returned %d dimensions, vector store connection expects %d.',
+                'Embedding dimension mismatch: provider returned %d dimensions, AI connection configuration expects %d.',
                 $actualVectorSize,
                 $configuredVectorSize,
             ), 1781002002);

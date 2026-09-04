@@ -19,7 +19,7 @@ use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
  *
  * Creates HTTP clients used to communicate with the Gemini API.
  *
- * @author Maximilian Fäßer <maximilian@faesslerweb.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later

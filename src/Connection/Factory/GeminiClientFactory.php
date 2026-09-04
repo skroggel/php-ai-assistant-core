@@ -21,7 +21,7 @@ use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
  * Creates timeout-aware HTTP clients for Gemini API requests.
  *
  * @internal Use GeminiClientFactoryInterface to provide custom client creation.
- * @author Maximilian Fäßer <maximilian@faesslerweb.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>
  * @package Madj2k\\AiCore
  * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
