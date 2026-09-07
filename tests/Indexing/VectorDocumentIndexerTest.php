@@ -8,6 +8,7 @@ use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\AiResponse;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse;
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfiguration;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfiguration;
@@ -133,6 +134,12 @@ final class VectorDocumentIndexerTest extends TestCase
             public function embed(AiConnectionConfigurationInterface $connection, EmbeddingRequest $request): EmbeddingResponse { return new EmbeddingResponse($this->embeddings[0] ?? []); }
             public function embedBatch(AiConnectionConfigurationInterface $connection, array $requests): array
             {
+                foreach ($requests as $request) {
+                    \PHPUnit\Framework\Assert::assertSame(
+                        EmbeddingPurpose::RetrievalDocument,
+                        $request->getPurpose(),
+                    );
+                }
                 return array_map(
                     fn (int $index): EmbeddingResponse => new EmbeddingResponse($this->embeddings[$index] ?? []),
                     array_keys($requests),

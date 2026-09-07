@@ -16,6 +16,7 @@ use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\AiResponse;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse;
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Factory\GeminiClientFactory;
 use Madj2k\AiCore\Connection\Factory\GeminiClientFactoryInterface;
@@ -343,16 +344,18 @@ final class GeminiConnector implements AiConnectorInterface
         EmbeddingRequest $request,
         string $model,
     ): array {
+        $normalizedModel = $this->normalizeModel($model);
         $payload = array_replace_recursive([
-            'model' => 'models/' . $this->normalizeModel($model),
+            'model' => 'models/' . $normalizedModel,
             'content' => [
                 'parts' => [['text' => $request->getText()]],
             ],
         ], $this->resolveConnectionOptions($connection, 'embedding'), $request->getOptions());
 
-        unset($payload['outputDimensionality']);
-
+        // Keep the deprecated top-level fields alongside EmbedContentConfig because
+        // some Gemini v1beta endpoints silently ignore the newer nested fields.
         if ($connection->getEmbeddingDimension() > 0) {
+            $payload['outputDimensionality'] = $connection->getEmbeddingDimension();
             $embedContentConfig = is_array($payload['embedContentConfig'] ?? null)
                 ? $payload['embedContentConfig']
                 : [];
@@ -360,7 +363,41 @@ final class GeminiConnector implements AiConnectorInterface
             $payload['embedContentConfig'] = $embedContentConfig;
         }
 
+        $taskType = $this->resolveEmbeddingTaskType($normalizedModel, $request->getPurpose());
+        if ($taskType !== null) {
+            $payload['taskType'] = $taskType;
+            $embedContentConfig = is_array($payload['embedContentConfig'] ?? null)
+                ? $payload['embedContentConfig']
+                : [];
+            $embedContentConfig['taskType'] = $taskType;
+            $payload['embedContentConfig'] = $embedContentConfig;
+        }
+
         return $payload;
+    }
+
+
+    /**
+     * Maps a provider-neutral embedding purpose to a supported Gemini task type.
+     *
+     * Gemini Embedding 2 uses textual task instructions instead of task types and
+     * is intentionally left unchanged here.
+     *
+     * @param string $model Normalized embedding model identifier.
+     * @param \Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose $purpose Embedding purpose.
+     * @return string|null Gemini task type or null when no mapping should be applied.
+     */
+    protected function resolveEmbeddingTaskType(string $model, EmbeddingPurpose $purpose): ?string
+    {
+        if ($model !== 'gemini-embedding-001') {
+            return null;
+        }
+
+        return match ($purpose) {
+            EmbeddingPurpose::RetrievalDocument => 'RETRIEVAL_DOCUMENT',
+            EmbeddingPurpose::RetrievalQuery => 'RETRIEVAL_QUERY',
+            EmbeddingPurpose::Unspecified => null,
+        };
     }
 
 

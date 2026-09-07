@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Indexing;
 
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
@@ -108,7 +109,10 @@ final readonly class VectorDocumentIndexer
         }
 
         $embeddingRequests = array_map(
-            static fn (string $chunkText): EmbeddingRequest => new EmbeddingRequest($chunkText),
+            static fn (string $chunkText): EmbeddingRequest => new EmbeddingRequest(
+                text: $chunkText,
+                purpose: EmbeddingPurpose::RetrievalDocument,
+            ),
             $chunks,
         );
         $embeddingResponses = $this->aiConnectorResolver

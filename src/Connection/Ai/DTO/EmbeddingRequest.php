@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Connection\Ai\DTO;
 
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
+
 /**
  * Class EmbeddingRequest
  *
@@ -55,19 +57,34 @@ final class EmbeddingRequest
 
 
     /**
+     * Embedding purpose. Unspecified preserves the previous embedding behavior.
+     *
+     * @var \Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose
+     */
+    protected EmbeddingPurpose $purpose = EmbeddingPurpose::Unspecified;
+
+
+    /**
      * Constructor.
      *
      * @param string $text Text to embed.
      * @param string $model Model identifier.
      * @param float|null $temperature Temperature.
      * @param array<string, mixed> $options Additional provider options.
+     * @param \Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose $purpose Provider-neutral embedding purpose.
      */
-    public function __construct(string $text = '', string $model = '', ?float $temperature = null, array $options = [])
-    {
+    public function __construct(
+        string $text = '',
+        string $model = '',
+        ?float $temperature = null,
+        array $options = [],
+        EmbeddingPurpose $purpose = EmbeddingPurpose::Unspecified,
+    ) {
         $this->text = $text;
         $this->model = $model;
         $this->temperature = $temperature;
         $this->options = $options;
+        $this->purpose = $purpose;
     }
 
 
@@ -160,5 +177,28 @@ final class EmbeddingRequest
     public function setOptions(array $options): void
     {
         $this->options = $options;
+    }
+
+
+    /**
+     * Returns the provider-neutral embedding purpose.
+     *
+     * @return \Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose Embedding purpose.
+     */
+    public function getPurpose(): EmbeddingPurpose
+    {
+        return $this->purpose;
+    }
+
+
+    /**
+     * Sets the provider-neutral embedding purpose.
+     *
+     * @param \Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose $purpose Embedding purpose.
+     * @return void
+     */
+    public function setPurpose(EmbeddingPurpose $purpose): void
+    {
+        $this->purpose = $purpose;
     }
 }

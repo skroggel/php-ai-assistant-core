@@ -21,6 +21,7 @@ use Madj2k\AiCore\Connection\Ai\DTO\AiMessage;
 use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
 use Madj2k\AiCore\Connection\Ai\GeminiConnector;
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfiguration;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Factory\GeminiClientFactoryInterface;
@@ -151,12 +152,15 @@ SSE;
                 'outputDimensionality' => 3072,
                 'embedContentConfig' => ['autoTruncate' => true],
             ],
-        ]);
+        ], 'gemini-embedding-001');
 
-        $single = $connector->embed($connection, new EmbeddingRequest('eins'));
+        $single = $connector->embed($connection, new EmbeddingRequest(
+            text: 'eins',
+            purpose: EmbeddingPurpose::RetrievalQuery,
+        ));
         $batch = $connector->embedBatch($connection, [
-            new EmbeddingRequest('zwei'),
-            new EmbeddingRequest('drei'),
+            new EmbeddingRequest(text: 'zwei', purpose: EmbeddingPurpose::RetrievalDocument),
+            new EmbeddingRequest(text: 'drei', purpose: EmbeddingPurpose::RetrievalDocument),
         ]);
 
         self::assertSame([0.1, 0.2], $single->getEmbedding());
@@ -172,9 +176,11 @@ SSE;
             512,
             JSON_THROW_ON_ERROR,
         );
-        self::assertArrayNotHasKey('outputDimensionality', $singlePayload);
+        self::assertSame(1536, $singlePayload['outputDimensionality']);
         self::assertSame(1536, $singlePayload['embedContentConfig']['outputDimensionality']);
         self::assertTrue($singlePayload['embedContentConfig']['autoTruncate']);
+        self::assertSame('RETRIEVAL_QUERY', $singlePayload['taskType']);
+        self::assertSame('RETRIEVAL_QUERY', $singlePayload['embedContentConfig']['taskType']);
 
         /** @var array<string, mixed> $batchPayload */
         $batchPayload = json_decode(
@@ -183,16 +189,55 @@ SSE;
             512,
             JSON_THROW_ON_ERROR,
         );
-        self::assertSame('models/gemini-embedding-test', $batchPayload['requests'][0]['model']);
+        self::assertSame('models/gemini-embedding-001', $batchPayload['requests'][0]['model']);
         self::assertSame('zwei', $batchPayload['requests'][0]['content']['parts'][0]['text']);
         self::assertSame('drei', $batchPayload['requests'][1]['content']['parts'][0]['text']);
-        self::assertArrayNotHasKey('outputDimensionality', $batchPayload['requests'][0]);
+        self::assertSame(1536, $batchPayload['requests'][0]['outputDimensionality']);
         self::assertSame(
             1536,
             $batchPayload['requests'][0]['embedContentConfig']['outputDimensionality'],
         );
         self::assertTrue($batchPayload['requests'][0]['embedContentConfig']['autoTruncate']);
+        self::assertSame(
+            'RETRIEVAL_DOCUMENT',
+            $batchPayload['requests'][0]['taskType'],
+        );
+        self::assertSame(
+            'RETRIEVAL_DOCUMENT',
+            $batchPayload['requests'][0]['embedContentConfig']['taskType'],
+        );
         self::assertArrayNotHasKey('chat', $batchPayload['requests'][0]);
+    }
+
+    /**
+     * @throws \JsonException If the recorded request contains malformed JSON.
+     * @throws \Madj2k\AiCore\Exception\ApiException If the mocked Gemini embedding request fails.
+     */
+    public function testLeavesPurposeUnmappedForOtherEmbeddingModels(): void
+    {
+        /** @var \ArrayObject<int, array<mixed>> $history */
+        $history = new ArrayObject();
+        $connector = $this->createConnector([
+            new Response(200, [], '{"embedding":{"values":[0.1,0.2]}}'),
+        ], $history);
+
+        $connector->embed(
+            $this->connection(),
+            new EmbeddingRequest(
+                text: 'eins',
+                purpose: EmbeddingPurpose::RetrievalQuery,
+            ),
+        );
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode(
+            (string)$this->historyRequest($history, 0)->getBody(),
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+        self::assertArrayNotHasKey('taskType', $payload);
+        self::assertArrayNotHasKey('taskType', $payload['embedContentConfig']);
     }
 
     /**
@@ -264,14 +309,17 @@ SSE;
      * Creates a complete Gemini test connection.
      *
      * @param array<string, mixed> $additionalOptions Provider-specific options.
+     * @param string $embeddingModel Embedding model identifier.
      * @return \Madj2k\AiCore\Connection\Configuration\AiConnectionConfiguration Test connection.
      */
-    private function connection(array $additionalOptions = []): AiConnectionConfiguration
-    {
+    private function connection(
+        array $additionalOptions = [],
+        string $embeddingModel = 'gemini-embedding-test',
+    ): AiConnectionConfiguration {
         return new AiConnectionConfiguration(
             apiKey: 'test-key',
             defaultModel: 'gemini-test',
-            embeddingModel: 'gemini-embedding-test',
+            embeddingModel: $embeddingModel,
             additionalOptions: $additionalOptions,
             connectorIdentifier: 'gemini',
         );

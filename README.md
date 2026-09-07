@@ -65,6 +65,17 @@ argument have been removed from that configuration.
 validates or creates that collection. Use `ConnectionHealthChecker::probeVectorStore()` when only a
 non-mutating connectivity check is required.
 
+## Embedding purposes
+
+`EmbeddingRequest` can describe whether text represents a document to be indexed or a query used
+for retrieval. The document indexer uses `EmbeddingPurpose::RetrievalDocument`; the retriever uses
+`EmbeddingPurpose::RetrievalQuery`. Connectors translate these provider-neutral purposes only when
+the selected provider and model support them.
+
+The Gemini connector maps both purposes to the corresponding task types for
+`gemini-embedding-001`. OpenAI currently has no equivalent request parameter and therefore leaves
+the purpose unused. Requests without an explicit purpose retain the previous behavior.
+
 ## Pipeline configuration
 
 Pipeline steps run in their configured order. Their stage describes the semantic position of the

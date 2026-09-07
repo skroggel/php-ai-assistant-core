@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Tests\Connection;
 
+use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfiguration;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfiguration;
 use PHPUnit\Framework\TestCase;
@@ -51,5 +53,16 @@ final class ConfigurationTest extends TestCase
         );
 
         self::assertSame(3072, $configuration->getEmbeddingDimension());
+    }
+
+    public function testEmbeddingRequestPurposeIsOptionalAndMutable(): void
+    {
+        $request = new EmbeddingRequest('content');
+
+        self::assertSame(EmbeddingPurpose::Unspecified, $request->getPurpose());
+
+        $request->setPurpose(EmbeddingPurpose::RetrievalDocument);
+
+        self::assertSame(EmbeddingPurpose::RetrievalDocument, $request->getPurpose());
     }
 }
