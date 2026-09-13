@@ -22,7 +22,6 @@ final readonly class VectorStoreConnectionConfiguration implements VectorStoreCo
      * @param array<string, mixed> $additionalOptions Provider-specific options.
      * @param string $connectorIdentifier Registered connector identifier.
      * @param string $defaultCollection Default collection name.
-     * @param int $vectorSize Default vector dimensions.
      * @param string $distance Default vector distance metric.
      * @param array<int,string> $collections Collections allowed for retrieval overrides.
      */
@@ -32,7 +31,6 @@ final readonly class VectorStoreConnectionConfiguration implements VectorStoreCo
         private array $additionalOptions = [],
         private string $connectorIdentifier = 'qdrant',
         private string $defaultCollection = '',
-        private int $vectorSize = 1536,
         private string $distance = 'Cosine',
         private array $collections = [],
     ) {}
@@ -57,9 +55,6 @@ final readonly class VectorStoreConnectionConfiguration implements VectorStoreCo
             array_merge([$this->defaultCollection], $this->collections),
         ))));
     }
-
-    /** @inheritDoc */
-    public function getVectorSize(): int { return $this->vectorSize; }
 
     /** @inheritDoc */
     public function getDistance(): string { return $this->distance; }

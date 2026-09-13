@@ -26,18 +26,20 @@ final readonly class AiConnectionConfiguration implements AiConnectionConfigurat
      * @param float $embeddingTemperature Default embedding sampling temperature.
      * @param array<string, mixed> $additionalOptions Provider-specific options.
      * @param string $connectorIdentifier Registered connector identifier.
+     * @param int $embeddingDimension Expected number of dimensions produced by the embedding model.
      */
     public function __construct(
         private string $apiKey,
-        private string $baseUrl = 'https://api.openai.com/v1',
+        private string $baseUrl = '',
         private string $organization = '',
         private string $project = '',
-        private string $defaultModel = 'gpt-4o-mini',
-        private string $embeddingModel = 'text-embedding-3-small',
+        private string $defaultModel = '',
+        private string $embeddingModel = '',
         private float $defaultTemperature = 0.2,
         private float $embeddingTemperature = 0.0,
         private array $additionalOptions = [],
         private string $connectorIdentifier = 'openai',
+        private int $embeddingDimension = 1536,
     ) {}
 
     /** @inheritDoc */
@@ -69,4 +71,7 @@ final readonly class AiConnectionConfiguration implements AiConnectionConfigurat
 
     /** @inheritDoc */
     public function getAdditionalOptionsArray(): array { return $this->additionalOptions; }
+
+    /** @inheritDoc */
+    public function getEmbeddingDimension(): int { return $this->embeddingDimension; }
 }

@@ -38,6 +38,10 @@ use Psr\Log\NullLogger;
  */
 final class OpenAiConnector implements AiConnectorInterface
 {
+    protected const DEFAULT_CHAT_MODEL = 'gpt-4o-mini';
+
+    protected const DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small';
+
     /**
      * Logger.
      *
@@ -183,7 +187,9 @@ final class OpenAiConnector implements AiConnectorInterface
      */
     public function streamChat(AiConnectionConfigurationInterface $connection, AiRequest $request, callable $onData): void
     {
-        $emittedData = false;
+        $streamState = new class {
+            public bool $emittedData = false;
+        };
         try {
             /** @var array<string, mixed> $payload */
             $payload = $this->buildChatPayload($connection, $request);
@@ -191,18 +197,18 @@ final class OpenAiConnector implements AiConnectorInterface
             $this->retryExecutor->execute(
                 'openai',
                 'streamChat',
-                function () use ($connection, $payload, $onData, &$emittedData): void {
+                function () use ($connection, $payload, $onData, $streamState): void {
                     /** @var iterable<object> $stream */
                     $stream = $this->createClient($connection)->chat()->createStreamed($payload);
                     foreach ($stream as $event) {
                         if (isset($event->choices[0]->delta->content)) {
-                            $emittedData = true;
+                            $streamState->emittedData = true;
                             $onData($event->choices[0]->delta->content);
                         }
                     }
                 },
-                function (\Throwable $exception) use (&$emittedData): bool {
-                    return !$emittedData
+                function (\Throwable $exception) use ($streamState): bool {
+                    return !$streamState->emittedData
                         && $this->exceptionClassifier->isRetryable($exception, $this->retryPolicy);
                 },
             );
@@ -260,7 +266,6 @@ final class OpenAiConnector implements AiConnectorInterface
      */
     protected function createClient(AiConnectionConfigurationInterface $connection): ClientContract
     {
-        /** @var string $cacheKey */
         $cacheKey = sha1(implode('|', [
             $connection->getApiKey(),
             $connection->getBaseUrl(),
@@ -328,7 +333,9 @@ final class OpenAiConnector implements AiConnectorInterface
             return $request->getModel();
         }
 
-        return $connection->getDefaultModel();
+        return $connection->getDefaultModel() !== ''
+            ? $connection->getDefaultModel()
+            : self::DEFAULT_CHAT_MODEL;
     }
 
 
@@ -362,7 +369,9 @@ final class OpenAiConnector implements AiConnectorInterface
             return $request->getModel();
         }
 
-        return $connection->getEmbeddingModel();
+        return $connection->getEmbeddingModel() !== ''
+            ? $connection->getEmbeddingModel()
+            : self::DEFAULT_EMBEDDING_MODEL;
     }
 
 

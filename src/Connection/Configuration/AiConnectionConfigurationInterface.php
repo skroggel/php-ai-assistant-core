@@ -36,6 +36,9 @@ interface AiConnectionConfigurationInterface
     /** Returns the default embedding model. */
     public function getEmbeddingModel(): string;
 
+    /** Returns the expected number of dimensions produced by the embedding model. */
+    public function getEmbeddingDimension(): int;
+
     /** Returns the default chat sampling temperature. */
     public function getDefaultTemperature(): float;
 

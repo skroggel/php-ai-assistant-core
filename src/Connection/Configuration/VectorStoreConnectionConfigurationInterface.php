@@ -35,9 +35,6 @@ interface VectorStoreConnectionConfigurationInterface
      */
     public function getCollectionList(): array;
 
-    /** Returns the default vector dimensions. */
-    public function getVectorSize(): int;
-
     /** Returns the default vector distance metric. */
     public function getDistance(): string;
 

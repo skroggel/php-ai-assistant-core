@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Connection\Health;
 
+use Madj2k\AiCore\Connection\Ai\DTO\AiMessage;
+use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
+use Madj2k\AiCore\Connection\Ai\DTO\AiResponse;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
+use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
@@ -41,34 +45,91 @@ final readonly class ConnectionHealthChecker
         AiConnectionConfigurationInterface $connection,
         string $probeText = 'AI connection test',
     ): bool {
-        $response = $this->aiConnectorResolver
+        return $this->probeAiEmbedding($connection, $probeText)->getEmbedding() !== [];
+    }
+
+
+    /**
+     * Requests one embedding and returns the complete probe response.
+     *
+     * This allows diagnostics to inspect provider details such as the actual
+     * vector dimension while keeping {@see checkAi()} backward compatible.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface $connection AI connection.
+     * @param string $probeText Probe text.
+     * @return \Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse Embedding probe response.
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
+    public function probeAiEmbedding(
+        AiConnectionConfigurationInterface $connection,
+        string $probeText = 'AI connection test',
+    ): EmbeddingResponse {
+        return $this->aiConnectorResolver
             ->get($connection->getConnectorIdentifier())
             ->embed($connection, new EmbeddingRequest($probeText));
+    }
 
-        return $response->getEmbedding() !== [];
+
+    /**
+     * Requests one minimal chat completion and returns the complete response.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface $connection AI connection.
+     * @param string $probeText Probe prompt.
+     * @param string $model Optional chat model override.
+     * @return \Madj2k\AiCore\Connection\Ai\DTO\AiResponse Chat probe response.
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
+    public function probeAiChat(
+        AiConnectionConfigurationInterface $connection,
+        string $probeText = 'Reply with OK.',
+        string $model = '',
+    ): AiResponse {
+        return $this->aiConnectorResolver
+            ->get($connection->getConnectorIdentifier())
+            ->chat(
+                $connection,
+                new AiRequest(
+                    [new AiMessage('user', $probeText)],
+                    model: $model,
+                    temperature: 0.0,
+                    maxTokens: 64,
+                ),
+            );
     }
 
     /**
-     * Verifies a vector store connection by ensuring a collection exists.
+     * Ensures that an explicitly supplied vector collection exists and is compatible.
      *
-     * If no collection is supplied, the configured default or a dedicated probe collection is used.
+     * Use {@see probeVectorStore()} for a non-mutating connectivity check.
      *
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection Vector-store connection.
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection Expected collection configuration.
+     * @return bool True when the collection exists and is compatible.
      * @throws \Throwable When connector resolution or the provider request fails.
      */
     public function checkVectorStore(
         VectorStoreConnectionConfigurationInterface $connection,
-        ?VectorCollection $collection = null,
+        VectorCollection $collection,
     ): bool {
-        $collection ??= new VectorCollection(
-            $connection->getDefaultCollection() !== ''
-                ? $connection->getDefaultCollection()
-                : '_connection_test',
-            $connection->getVectorSize(),
-            $connection->getDistance(),
-        );
-
         return $this->vectorStoreConnectorResolver
             ->get($connection->getConnectorIdentifier())
             ->ensureCollection($connection, $collection);
+    }
+
+
+    /**
+     * Verifies vector-store connectivity without creating or validating a collection.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection Vector-store connection.
+     * @return bool True when the vector store can list its collections.
+     * @throws \Throwable When connector resolution or the provider request fails.
+     */
+    public function probeVectorStore(VectorStoreConnectionConfigurationInterface $connection): bool
+    {
+        $this->vectorStoreConnectorResolver
+            ->get($connection->getConnectorIdentifier())
+            ->listCollections($connection);
+
+        return true;
     }
 }

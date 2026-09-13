@@ -16,6 +16,7 @@ use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
 use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 use Madj2k\AiCore\Assistant\Pipeline\Processor\AbstractRetrieverProcessor;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
 use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorSearchRequest;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
@@ -46,7 +47,7 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
     public function __construct(
         private AiConnectorResolver          $aiConnectorResolver,
         private VectorStoreConnectorResolver $vectorStoreConnectorResolver,
-        private PipelineLoggerInterface               $pipelineLogger,
+        private PipelineLoggerInterface      $pipelineLogger,
     ) {
     }
 
@@ -101,7 +102,10 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
 
         $embedding = $this->aiConnectorResolver
             ->get($aiConnection->getConnectorIdentifier())
-            ->embed($aiConnection, new EmbeddingRequest($context->getCurrentQuery()))
+            ->embed($aiConnection, new EmbeddingRequest(
+                text: $context->getCurrentQuery(),
+                purpose: EmbeddingPurpose::RetrievalQuery,
+            ))
             ->getEmbedding();
 
         $rows = $this->vectorStoreConnectorResolver

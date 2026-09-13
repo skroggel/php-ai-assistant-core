@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Indexing;
 
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
+use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
@@ -36,8 +37,7 @@ final readonly class VectorDocumentIndexer
         private VectorStoreConnectorResolver $vectorStoreConnectorResolver,
         private TextChunker $textChunker,
         private SourceIdentityGenerator $sourceIdentityGenerator,
-    ) {
-    }
+    ) {}
 
     /**
      * Resolves the collection from an explicit override, indexing configuration or connection default.
@@ -109,7 +109,10 @@ final readonly class VectorDocumentIndexer
         }
 
         $embeddingRequests = array_map(
-            static fn (string $chunkText): EmbeddingRequest => new EmbeddingRequest($chunkText),
+            static fn (string $chunkText): EmbeddingRequest => new EmbeddingRequest(
+                text: $chunkText,
+                purpose: EmbeddingPurpose::RetrievalDocument,
+            ),
             $chunks,
         );
         $embeddingResponses = $this->aiConnectorResolver
@@ -121,10 +124,16 @@ final readonly class VectorDocumentIndexer
             return 0;
         }
 
-        $configuredVectorSize = $vectorStoreConnection->getVectorSize();
+        $configuredVectorSize = $aiConnection->getEmbeddingDimension();
+        if ($configuredVectorSize <= 0) {
+            throw new IndexingException(
+                'The AI connection embedding dimension must be greater than zero.',
+                1781002003,
+            );
+        }
         if ($actualVectorSize !== $configuredVectorSize) {
             throw new IndexingException(sprintf(
-                'Embedding dimension mismatch: provider returned %d dimensions, vector store connection expects %d.',
+                'Embedding dimension mismatch: provider returned %d dimensions, AI connection configuration expects %d.',
                 $actualVectorSize,
                 $configuredVectorSize,
             ), 1781002002);

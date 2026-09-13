@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Tests\Connection;
 
 use Madj2k\AiCore\Connection\Ai\OpenAiConnector;
+use Madj2k\AiCore\Connection\Ai\GeminiConnector;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Exception\ConnectorNotFoundException;
 use Madj2k\AiCore\Exception\DuplicateConnectorIdentifierException;
@@ -14,11 +15,17 @@ final class ResolverTest extends TestCase
     public function testResolvesConnectorByIdentifier(): void
     {
         $connector = new OpenAiConnector();
-        $resolver = new AiConnectorResolver([$connector]);
+        $geminiConnector = new GeminiConnector();
+        $resolver = new AiConnectorResolver([$connector, $geminiConnector]);
 
         self::assertTrue($resolver->has('openai'));
+        self::assertTrue($resolver->has('gemini'));
         self::assertSame($connector, $resolver->get('openai'));
-        self::assertSame(['openai' => $connector], $resolver->all());
+        self::assertSame($geminiConnector, $resolver->get('gemini'));
+        self::assertSame([
+            'openai' => $connector,
+            'gemini' => $geminiConnector,
+        ], $resolver->all());
     }
 
     public function testRejectsDuplicateIdentifiers(): void
