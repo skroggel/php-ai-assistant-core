@@ -35,6 +35,7 @@ use Madj2k\AiCore\Connection\VectorStore\DTO\VectorSearchResult;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorWriteResult;
 use Madj2k\AiCore\Exception\VectorDatabaseException;
 use Psr\Log\LoggerInterface;
+use Qdrant\Models\Filter\Condition\MatchAny;
 use Qdrant\Models\Filter\Condition\MatchString;
 use Qdrant\Models\Filter\Filter;
 use Qdrant\Models\PointStruct;
@@ -44,6 +45,7 @@ use Qdrant\Models\Request\SearchRequest;
 use Qdrant\Models\Request\VectorParams;
 use Qdrant\Models\VectorStruct;
 use Qdrant\Qdrant as Client;
+
 use Psr\Log\NullLogger;
 
 /**
@@ -309,19 +311,18 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
         $filter = is_array($params['filter'] ?? null) ? $params['filter'] : null;
         unset($params['filter']);
 
-        /** @var int $requestLimit */
-        $requestLimit = $filter !== null
-            ? max($request->getLimit(), min(200, $request->getLimit() * 20))
-            : $request->getLimit();
-
         try {
             /** @var \Qdrant\Models\Request\SearchRequest $searchRequest */
             $searchRequest = new SearchRequest(new VectorStruct($request->getVector(), $vectorName));
             $searchRequest
-                ->setLimit($requestLimit)
+                ->setLimit($request->getLimit())
                 ->setParams($params)
                 ->setWithPayload($request->getWithPayload())
                 ->setWithVector($request->getWithVector());
+
+            if ($filter !== null) {
+                $searchRequest->setFilter($this->buildQdrantFilter($filter));
+            }
 
             /** @var \Qdrant\Response $response */
             $response = $this->executeRequest(
@@ -365,14 +366,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
             );
         }
 
-        if ($filter !== null) {
-            $results = array_values(array_filter(
-                $results,
-                fn (VectorSearchResult $result): bool => $this->matchesFilter($result->getPayload(), $filter)
-            ));
-        }
-
-        return array_slice($results, 0, $request->getLimit());
+        return $results;
     }
 
 
@@ -436,7 +430,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
 
             /** @var \Qdrant\Models\Filter\Filter $filter */
             $filter = (new Filter())
-            ->addMust(new MatchString('meta.source_hash', $sourceHash));
+                ->addMust(new MatchString('meta.source_hash', $sourceHash));
 
 
             /** @var mixed $response */
@@ -538,6 +532,11 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
     }
 
 
+    /**
+     * @param string $operation
+     * @param \Throwable $exception
+     * @return \Madj2k\AiCore\Exception\VectorDatabaseException
+     */
     protected function createVectorDatabaseException(
         string $operation,
         \Throwable $exception,
@@ -607,7 +606,13 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
     }
 
 
-    /** Creates the cache key for one validated collection configuration. */
+    /**
+     * Creates the cache key for one validated collection configuration.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection
+     * @return string
+     */
     private function createCollectionCacheKey(
         VectorStoreConnectionConfigurationInterface $connection,
         VectorCollection $collection,
@@ -623,19 +628,20 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
 
 
     /**
-     * Checks whether a payload matches the filter.
+     * Builds a native Qdrant filter from the generic filter configuration.
      *
-     * @param array<string, mixed> $payload Payload.
-     * @param array<string, mixed> $filter Filter.
-     * @return bool True if filter matches.
+     * @param array<string, mixed> $filter Filter configuration.
+     * @return \Qdrant\Models\Filter\Filter Qdrant filter.
      */
-    protected function matchesFilter(array $payload, array $filter): bool
+    protected function buildQdrantFilter(array $filter): Filter
     {
+        $qdrantFilter = new Filter();
+
         /** @var mixed $must */
         $must = $filter['must'] ?? null;
 
         if (!is_array($must)) {
-            return true;
+            return $qdrantFilter;
         }
 
         foreach ($must as $condition) {
@@ -644,74 +650,27 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
             }
 
             /** @var string $key */
-            $key = (string)($condition['key'] ?? '');
-
-            if ($key === '') {
-                continue;
-            }
-
-            /** @var mixed $value */
-            $value = $this->getPayloadValueByPath($payload, $key);
-
-            /** @var mixed $matchConfig */
-            $matchConfig = $condition['match'] ?? [];
-
-            if (is_array($matchConfig) && array_key_exists('any', $matchConfig)) {
-                /** @var array<int, mixed> $allowedValues */
-                $allowedValues = is_array($matchConfig['any']) ? $matchConfig['any'] : [$matchConfig['any']];
-
-                /** @var bool $matchesAny */
-                $matchesAny = false;
-
-                foreach ($allowedValues as $allowedValue) {
-                    if ((string)$value === (string)$allowedValue) {
-                        $matchesAny = true;
-                        break;
-                    }
-                }
-
-                if (!$matchesAny) {
-                    return false;
-                }
-
-                continue;
-            }
+            $key = trim((string)($condition['key'] ?? ''));
 
             /** @var mixed $match */
-            $match = is_array($matchConfig) ? ($matchConfig['value'] ?? null) : null;
+            $match = $condition['match'] ?? null;
 
-            if ((string)$value !== (string)$match) {
-                return false;
+            if ($key === '' || !is_array($match)) {
+                continue;
+            }
+
+            if (array_key_exists('any', $match)) {
+                /** @var array<int, mixed> $values */
+                $values = is_array($match['any']) ? array_values($match['any']) : [$match['any']];
+                $qdrantFilter->addMust(new MatchAny($key, $values));
+                continue;
+            }
+
+            if (array_key_exists('value', $match)) {
+                $qdrantFilter->addMust(new MatchString($key, (string)$match['value']));
             }
         }
 
-        return true;
-    }
-
-
-    /**
-     * Returns a nested payload value by dot path.
-     *
-     * @param array<string, mixed> $payload Payload.
-     * @param string $path Dot path.
-     * @return mixed Payload value.
-     */
-    protected function getPayloadValueByPath(array $payload, string $path): mixed
-    {
-        /** @var array<int, string> $segments */
-        $segments = array_filter(explode('.', $path), static fn (string $segment): bool => $segment !== '');
-
-        /** @var mixed $current */
-        $current = $payload;
-
-        foreach ($segments as $segment) {
-            if (!is_array($current) || !array_key_exists($segment, $current)) {
-                return null;
-            }
-
-            $current = $current[$segment];
-        }
-
-        return $current;
+        return $qdrantFilter;
     }
 }

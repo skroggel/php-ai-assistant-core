@@ -121,6 +121,22 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
             ))
             ->getEmbedding();
 
+        /** @todo implement filters in step to add to params
+         * params: [
+         *      'hnsw_ef' => 128,
+         *      'exact' => false,
+         *      'filter' => [
+         *          'must' => [
+         *              [
+         *                  'key' => 'meta.document_type',
+         *                  'match' => [
+         *                      'value' => 'faq',
+         *                  ],
+         *              ],
+         *          ],
+         *      ],
+         * ],
+         */
         $rows = $this->vectorStoreConnectorResolver
             ->get($vectorStoreConnection->getConnectorIdentifier())
             ->search($vectorStoreConnection, new VectorSearchRequest(
