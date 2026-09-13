@@ -2,10 +2,21 @@
 declare(strict_types=1);
 
 /*
- * This file is part of madj2k/ai-core.
+ * This file is part of madj2k\ai-core
  *
- * For the full copyright and license information, please read the
- * LICENSE file that was distributed with this source code.
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 namespace Madj2k\AiCore\Connection\Ai;
@@ -32,38 +43,21 @@ use Psr\Log\NullLogger;
  * Provides OpenAI chat and embedding operations for shared usage.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
-final class OpenAiConnector implements AiConnectorInterface
+final class OpenAiConnector extends AbstractConnector implements AiConnectorInterface
 {
     protected const DEFAULT_CHAT_MODEL = 'gpt-4o-mini';
 
     protected const DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small';
 
-    /**
-     * Logger.
-     *
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected LoggerInterface $logger;
-
 
     /**
-     * Runtime client cache.
-     *
-     * @var array<string, \OpenAI\Contracts\ClientContract>
+     * @var \Madj2k\AiCore\Connection\Factory\OpenAiClientFactoryInterface $clientFactory
      */
-    protected array $clients = [];
-
     protected OpenAiClientFactoryInterface $clientFactory;
-
-    protected RetryPolicy $retryPolicy;
-
-    protected RetryExecutor $retryExecutor;
-
-    protected ExceptionClassifier $exceptionClassifier;
 
 
     /**

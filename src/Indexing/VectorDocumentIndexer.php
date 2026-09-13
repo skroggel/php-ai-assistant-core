@@ -1,6 +1,24 @@
 <?php
 declare(strict_types=1);
 
+/*
+ * This file is part of madj2k\ai-core
+ *
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 namespace Madj2k\AiCore\Indexing;
 
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
@@ -20,9 +38,9 @@ use Madj2k\AiCore\Indexing\Identity\SourceIdentityGenerator;
  * Chunks source documents, creates embeddings and replaces their vectors in a vector store.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 final readonly class VectorDocumentIndexer
 {
@@ -39,8 +57,13 @@ final readonly class VectorDocumentIndexer
         private SourceIdentityGenerator $sourceIdentityGenerator,
     ) {}
 
+
     /**
      * Resolves the collection from an explicit override, indexing configuration or connection default.
+     *
+     * @param \Madj2k\AiCore\Indexing\Configuration\IndexingConfigurationInterface $configuration
+     * @param string $collectionOverride
+     * @return string
      */
     public function resolveCollection(
         IndexingConfigurationInterface $configuration,
@@ -58,6 +81,7 @@ final readonly class VectorDocumentIndexer
 
         return trim($configuration->getVectorStoreConnection()?->getDefaultCollection() ?? '');
     }
+
 
     /**
      * Indexes one document and returns the number of written vector chunks.
@@ -235,6 +259,10 @@ final readonly class VectorDocumentIndexer
         return hash_final($hash);
     }
 
+    /**
+     * @param int $value
+     * @return int|null
+     */
     private function positiveOrNull(int $value): ?int
     {
         return $value > 0 ? $value : null;

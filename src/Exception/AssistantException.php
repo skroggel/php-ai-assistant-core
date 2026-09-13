@@ -2,18 +2,22 @@
 declare(strict_types=1);
 
 /*
- * This file is part of madj2k/ai-core.
+ * This file is part of madj2k\ai-core
  *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
  *
- * For the full copyright and license information, please read the
- * LICENSE file that was distributed with this source code.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
  *
- * SPDX-License-Identifier: GPL-2.0-or-later
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 
 namespace Madj2k\AiCore\Exception;
 
@@ -23,8 +27,8 @@ namespace Madj2k\AiCore\Exception;
  * Raised for assistant configuration and pipeline execution failures.
  *
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 class AssistantException extends AppException {}

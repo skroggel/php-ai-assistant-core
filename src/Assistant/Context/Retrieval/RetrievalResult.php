@@ -2,10 +2,23 @@
 declare(strict_types=1);
 
 /*
- * This file is part of madj2k/ai-core.
+ * This file is part of madj2k\ai-core
  *
- * SPDX-License-Identifier: GPL-2.0-or-later
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 namespace Madj2k\AiCore\Assistant\Context\Retrieval;
 
 /**
@@ -15,16 +28,16 @@ namespace Madj2k\AiCore\Assistant\Context\Retrieval;
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 final class RetrievalResult
 {
     /**
      * Named retrieval groups collected by the pipeline.
      *
-     * @var array<int, RetrievalGroup>
+     * @var array<int, \Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalGroup>
      */
     protected array $groups = [];
 
@@ -84,6 +97,7 @@ final class RetrievalResult
         $this->groups[] = $group;
         $this->answerContext = '';
     }
+
 
     /**
      * Returns all normalized documents in retrieval order.

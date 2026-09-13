@@ -2,10 +2,21 @@
 declare(strict_types=1);
 
 /*
- * This file is part of madj2k/ai-core.
+ * This file is part of madj2k\ai-core
  *
- * For the full copyright and license information, please read the
- * LICENSE file that was distributed with this source code.
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 namespace Madj2k\AiCore\Connection\VectorStore;
@@ -41,9 +52,9 @@ use Psr\Log\NullLogger;
  * Provides shared Qdrant vector store operations.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
 {
@@ -54,18 +65,27 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
      */
     protected array $clients = [];
 
-    /** @var array<string, true> */
+    /**
+     * @var array<string, true>
+     */
     protected array $validatedCollections = [];
 
+    /**
+     * @var \Madj2k\AiCore\Connection\Factory\QdrantClientFactoryInterface
+     */
     protected QdrantClientFactoryInterface $clientFactory;
 
+    /**
+     * @var \Madj2k\AiCore\Connection\Resilience\RetryPolicy
+     */
     protected RetryPolicy $retryPolicy;
 
+    /**
+     * @var \Madj2k\AiCore\Connection\Resilience\RetryExecutor
+     */
     protected RetryExecutor $retryExecutor;
 
     /**
-     * Logger.
-     *
      * @var \Psr\Log\LoggerInterface
      */
     protected LoggerInterface $logger;
@@ -107,6 +127,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
      *
      * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection Vector store connection.
      * @return \Qdrant\Qdrant Qdrant client.
+     * @throws \Madj2k\AiCore\Exception\VectorDatabaseException
      */
     protected function createClient(VectorStoreConnectionConfigurationInterface $connection): Client
     {

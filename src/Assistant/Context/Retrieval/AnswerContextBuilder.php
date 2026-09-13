@@ -2,9 +2,21 @@
 declare(strict_types=1);
 
 /*
- * This file is part of madj2k/ai-core.
+ * This file is part of madj2k\ai-core
  *
- * SPDX-License-Identifier: GPL-2.0-or-later
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 namespace Madj2k\AiCore\Assistant\Context\Retrieval;
@@ -20,9 +32,9 @@ use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
  * @internal Prompt context implementations may change independently of the public builder contract.
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 final class AnswerContextBuilder
 {
@@ -64,7 +76,7 @@ final class AnswerContextBuilder
     /**
      * Builds prompt context with explicit retrieval-specific limits.
      *
-     * @param array<int, RetrievalDocument> $documents Retrieval documents.
+     * @param array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument> $documents Retrieval documents.
      * @param int $maxContextChunks Maximum number of context chunks.
      * @param int $maxContextCharacters Maximum number of context characters.
      * @param array<int, string> $metadataFields Metadata fields included in the prompt.

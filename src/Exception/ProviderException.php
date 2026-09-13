@@ -1,6 +1,24 @@
 <?php
 declare(strict_types=1);
 
+/*
+ * This file is part of madj2k\ai-core
+ *
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 namespace Madj2k\AiCore\Exception;
 
 /**
@@ -9,9 +27,9 @@ namespace Madj2k\AiCore\Exception;
  * Base exception carrying normalized diagnostics for external provider failures.
  *
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 class ProviderException extends AppException
 {
@@ -38,18 +56,57 @@ class ProviderException extends AppException
         parent::__construct($message, $code, $previous);
     }
 
-    /** Returns the provider identifier. */
-    public function getProvider(): string { return $this->provider; }
+    /**
+     * Returns the provider identifier.
+     *
+     * @return string
+     */
+    public function getProvider(): string
+    {
+        return $this->provider;
+    }
 
-    /** Returns the operation identifier. */
-    public function getOperation(): string { return $this->operation; }
 
-    /** Returns the detected HTTP status code. */
-    public function getStatusCode(): ?int { return $this->statusCode; }
+    /**
+     * Returns the operation identifier.
+     *
+     * @return string
+     */
+    public function getOperation(): string
+    {
+        return $this->operation;
+    }
 
-    /** Determines whether the final failure was classified as retryable. */
-    public function isRetryable(): bool { return $this->retryable; }
 
-    /** Returns the number of executed attempts. */
-    public function getAttempts(): int { return $this->attempts; }
+    /**
+     * Returns the detected HTTP status code
+     *
+     * @return int|null
+     */
+    public function getStatusCode(): ?int
+    {
+        return $this->statusCode;
+    }
+
+
+    /**
+     * Determines whether the final failure was classified as retryable.
+     *
+     * @return bool
+     */
+    public function isRetryable(): bool
+    {
+        return $this->retryable;
+    }
+
+
+    /**
+     * Returns the number of executed attempts.
+     *
+     * @return int
+     */
+    public function getAttempts(): int
+    {
+        return $this->attempts;
+    }
 }

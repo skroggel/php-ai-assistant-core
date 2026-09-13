@@ -2,9 +2,21 @@
 declare(strict_types=1);
 
 /*
- * This file is part of madj2k/ai-core.
+ * This file is part of madj2k\ai-core
  *
- * SPDX-License-Identifier: GPL-2.0-or-later
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 namespace Madj2k\AiCore\Assistant\Context\Assistant;
@@ -19,9 +31,9 @@ use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInt
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 final class AssistantContext
 {
@@ -52,7 +64,7 @@ final class AssistantContext
     /**
      * AI connection.
      *
-     * @var \Madj2k\AiCore\Connection\Domain\Model\AiConnectionConfigurationInterface|null
+     * @var \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface|null
      */
     protected ?AiConnectionConfigurationInterface $aiConnection = null;
 
@@ -60,7 +72,7 @@ final class AssistantContext
     /**
      * Vector store connection.
      *
-     * @var \Madj2k\AiCore\Connection\Domain\Model\VectorStoreConnectionConfigurationInterface|null
+     * @var \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface|null
      */
     protected ?VectorStoreConnectionConfigurationInterface $vectorStoreConnection = null;
 
@@ -103,8 +115,8 @@ final class AssistantContext
      * @param int $uid
      * @param string $title
      * @param string $assistantLabel
-     * @param \Madj2k\AiCore\Connection\Domain\Model\AiConnectionConfigurationInterface|null $aiConnection
-     * @param \Madj2k\AiCore\Connection\Domain\Model\VectorStoreConnectionConfigurationInterface|null $vectorStoreConnection
+     * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface|null $aiConnection
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface|null $vectorStoreConnection
      * @param string $identityPrompt
      * @param string $behaviorRules
      * @param string $retrievalRules
@@ -131,7 +143,6 @@ final class AssistantContext
         $this->behaviorRules = $behaviorRules;
         $this->retrievalRules = $retrievalRules;
         $this->outputRules = $outputRules;
-
     }
 
 
@@ -207,7 +218,7 @@ final class AssistantContext
     /**
      * Returns the AI connection.
      *
-     * @return \Madj2k\AiCore\Connection\Domain\Model\AiConnectionConfigurationInterface|null AI connection.
+     * @return \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface|null AI connection.
      */
     public function getAiConnection(): ?AiConnectionConfigurationInterface
     {
@@ -218,7 +229,7 @@ final class AssistantContext
     /**
      * Returns the vector store connection.
      *
-     * @return \Madj2k\AiCore\Connection\Domain\Model\VectorStoreConnectionConfigurationInterface|null Vector store connection.
+     * @return \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface|null Vector store connection.
      */
     public function getVectorStoreConnection(): ?VectorStoreConnectionConfigurationInterface
     {

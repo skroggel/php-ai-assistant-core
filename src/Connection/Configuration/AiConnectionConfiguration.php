@@ -1,6 +1,24 @@
 <?php
 declare(strict_types=1);
 
+/*
+ * This file is part of madj2k\ai-core
+ *
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 namespace Madj2k\AiCore\Connection\Configuration;
 
 /**
@@ -9,9 +27,9 @@ namespace Madj2k\AiCore\Connection\Configuration;
  * Immutable framework-independent AI connection configuration.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 final readonly class AiConnectionConfiguration implements AiConnectionConfigurationInterface
 {
@@ -43,35 +61,68 @@ final readonly class AiConnectionConfiguration implements AiConnectionConfigurat
     ) {}
 
     /** @inheritDoc */
-    public function getConnectorIdentifier(): string { return $this->connectorIdentifier; }
+    public function getConnectorIdentifier(): string
+    {
+        return $this->connectorIdentifier;
+    }
 
     /** @inheritDoc */
-    public function getApiKey(): string { return $this->apiKey; }
+    public function getApiKey(): string
+    {
+        return $this->apiKey;
+    }
 
     /** @inheritDoc */
-    public function getBaseUrl(): string { return rtrim($this->baseUrl, '/'); }
+    public function getBaseUrl(): string
+    {
+        return rtrim($this->baseUrl, '/');
+    }
 
     /** @inheritDoc */
-    public function getOrganization(): string { return $this->organization; }
+    public function getOrganization(): string
+    {
+        return $this->organization;
+    }
 
     /** @inheritDoc */
-    public function getProject(): string { return $this->project; }
+    public function getProject(): string
+    {
+        return $this->project;
+    }
 
     /** @inheritDoc */
-    public function getDefaultModel(): string { return $this->defaultModel; }
+    public function getDefaultModel(): string
+    {
+        return $this->defaultModel;
+    }
 
     /** @inheritDoc */
-    public function getEmbeddingModel(): string { return $this->embeddingModel; }
+    public function getEmbeddingModel(): string
+    {
+        return $this->embeddingModel;
+    }
 
     /** @inheritDoc */
-    public function getDefaultTemperature(): float { return $this->defaultTemperature; }
+    public function getDefaultTemperature(): float
+    {
+        return $this->defaultTemperature;
+    }
 
     /** @inheritDoc */
-    public function getEmbeddingTemperature(): float { return $this->embeddingTemperature; }
+    public function getEmbeddingTemperature(): float
+    {
+        return $this->embeddingTemperature;
+    }
 
     /** @inheritDoc */
-    public function getAdditionalOptionsArray(): array { return $this->additionalOptions; }
+    public function getAdditionalOptionsArray(): array
+    {
+        return $this->additionalOptions;
+    }
 
     /** @inheritDoc */
-    public function getEmbeddingDimension(): int { return $this->embeddingDimension; }
+    public function getEmbeddingDimension(): int
+    {
+        return $this->embeddingDimension;
+    }
 }

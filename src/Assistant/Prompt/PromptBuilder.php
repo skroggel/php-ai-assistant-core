@@ -2,9 +2,21 @@
 declare(strict_types=1);
 
 /*
- * This file is part of madj2k/ai-core.
+ * This file is part of madj2k\ai-core
  *
- * SPDX-License-Identifier: GPL-2.0-or-later
+ * Copyright (C) 2026 Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 namespace Madj2k\AiCore\Assistant\Prompt;
@@ -34,9 +46,9 @@ use Madj2k\AiCore\Assistant\Prompt\Context\Registry\ContextBuilderRegistry;
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
  * @author Maximilian Fäßler <maximilian@faesslerweb.de>
- * @copyright Steffen Kroggel <developer@steffenkroggel.de>
- * @package Madj2k\\AiCore
- * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2 or later
+ * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
+ * @package Madj2k\AiCore
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
 final class PromptBuilder
 {
@@ -53,9 +65,9 @@ final class PromptBuilder
     /**
      * Builds chat messages for an LLM step.
      *
-     * @param Context $context Current chat context.
-     * @param PipelineStepConfigurationInterface $step Step configuration.
-     * @return array<int,array{role:string,content:string}>
+     * @param \Madj2k\AiCore\Assistant\Context\Context $context
+     * @param \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step
+     * @return array[]
      */
     public function buildMessages(Context $context, PipelineStepConfigurationInterface $step): array
     {
@@ -80,10 +92,10 @@ final class PromptBuilder
     /**
      * Returns one section content from the centralized prompt context.
      *
-     * @param Context $context Current chat context.
-     * @param PipelineStepConfigurationInterface $step Step configuration.
-     * @param string $title Section title.
-     * @return string Section content.
+     * @param \Madj2k\AiCore\Assistant\Context\Context $context
+     * @param \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step
+     * @param string $title
+     * @return string
      */
     public function getContextSectionContent(
         Context $context,
@@ -103,8 +115,8 @@ final class PromptBuilder
     /**
      * Builds the system prompt from selected assistant and step prompt parts.
      *
-     * @param Context $context Current chat context.
-     * @param PipelineStepConfigurationInterface $step Step configuration.
+     * @param \Madj2k\AiCore\Assistant\Context\Context $context
+     * @param \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step
      * @return string
      */
     private function buildSystemPrompt(Context $context, PipelineStepConfigurationInterface $step): string
@@ -163,8 +175,8 @@ final class PromptBuilder
     /**
      * Builds the history prompt according to the configured history policy.
      *
-     * @param Context $context Current chat context.
-     * @param PipelineStepConfigurationInterface $step Step configuration.
+     * @param \Madj2k\AiCore\Assistant\Context\Context $context
+     * @param \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step
      * @return string
      */
     private function buildHistoryPrompt(Context $context, PipelineStepConfigurationInterface $step): string
@@ -191,9 +203,9 @@ final class PromptBuilder
     /**
      * Builds the step-specific context prompt from centralized prompt context sections.
      *
-     * @param Context $context Current chat context.
-     * @param PipelineStepConfigurationInterface $step Step configuration.
-     * @return string Prompt context.
+     * @param \Madj2k\AiCore\Assistant\Context\Context $context
+     * @param \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step
+     * @return string
      */
     private function buildContextPrompt(Context $context, PipelineStepConfigurationInterface $step): string
     {

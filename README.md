@@ -190,4 +190,4 @@ number of attempts through `ApiException` or `VectorDatabaseException`.
 
 ## License
 
-GNU General Public License 2.0 or later. See [LICENSE](LICENSE).
+GNU General Public License version 3. See [LICENSE](LICENSE).
