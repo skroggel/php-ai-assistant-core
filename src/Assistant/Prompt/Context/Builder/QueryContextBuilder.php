@@ -49,9 +49,11 @@ final class QueryContextBuilder extends AbstractContextBuilder
                 $this->section('Current Query', $context->getCurrentQuery(), 10),
                 $this->section('Original User Query', $context->getRequest()->getQuery(), 20),
             ]),
-            AssistantPipelineProcessorType::ContextOptimizer,
-            AssistantPipelineProcessorType::QualityGate => $this->filterSections([
+            AssistantPipelineProcessorType::ContextOptimizer => $this->filterSections([
                 $this->section('Current Query', $context->getCurrentQuery(), 10),
+            ]),
+            AssistantPipelineProcessorType::QualityGate => $this->filterSections([
+                $this->section('Original User Query', $context->getRequest()->getQuery(), 10),
             ]),
             AssistantPipelineProcessorType::AnswerGenerator => $this->filterSections([
                 $this->section('Original User Query', $context->getRequest()->getQuery(), 10),
