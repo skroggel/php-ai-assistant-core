@@ -18,8 +18,15 @@ final class AdapterResolverTest extends TestCase
 
         self::assertSame(
             'Hello world',
-            (new PlainAdapter())->extract('data://text/plain,Hello%20world', $metadata),
+            (new PlainAdapter())->extract('data://text/plain,Hello%20world', $metadata)->getContent(),
         );
+    }
+
+    public function testPlainAdapterReturnsNullForUnreadableFile(): void
+    {
+        $metadata = new DocumentMetadata('file', '/does/not/exist.txt');
+
+        self::assertNull((new PlainAdapter())->extract('/does/not/exist.txt', $metadata));
     }
 
     public function testResolvesFirstSupportingAdapter(): void

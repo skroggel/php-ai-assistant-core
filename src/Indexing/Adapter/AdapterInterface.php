@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Indexing\Adapter;
 
 use Madj2k\AiCore\DTO\DocumentMetadata;
+use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
 
 /**
  * Interface AdapterInterface
@@ -61,11 +62,11 @@ interface AdapterInterface
 
 
     /**
-     * Extracts normalized text from a source file.
+     * Extracts one indexable document from a source file.
      *
      * @param string $path File path.
      * @param \Madj2k\AiCore\DTO\DocumentMetadata $metadata Metadata to enrich.
-     * @return string Extracted text.
+     * @return \Madj2k\AiCore\Indexing\DTO\IndexableDocument|null Extracted document or null when unreadable.
      */
-    public function extract(string $path, DocumentMetadata $metadata): string;
+    public function extract(string $path, DocumentMetadata $metadata): ?IndexableDocument;
 }

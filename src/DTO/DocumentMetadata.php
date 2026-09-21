@@ -66,12 +66,19 @@ class DocumentMetadata
 
 
     /**
-     * Language uid.
+     * ISO language code.
      *
      * @var int
      */
-    protected int $language = 0;
+    protected string $language = '';
 
+
+    /**
+     * TYPO3 language uid.
+     *
+     * @var int
+     */
+    protected int $languageId = -1;
 
     /**
      * Page uid.
@@ -120,7 +127,8 @@ class DocumentMetadata
      * @param string $sourceIdentifier Source identifier.
      * @param string $title Source title.
      * @param string $url Source URL.
-     * @param int $language Language uid.
+     * @param string $language ISO language code.
+     * @param int $languageId TYPO3 language uid.
      * @param int $pageId Page uid.
      * @param string $path File path.
      * @param string $filename File name.
@@ -132,7 +140,8 @@ class DocumentMetadata
         string $sourceIdentifier = '',
         string $title = '',
         string $url = '',
-        int $language = 0,
+        string $language = '',
+        int $languageId = -1,
         int $pageId = 0,
         string $path = '',
         string $filename = '',
@@ -143,7 +152,8 @@ class DocumentMetadata
         $this->sourceIdentifier = trim($sourceIdentifier);
         $this->title = trim($title);
         $this->url = trim($url);
-        $this->language = $language;
+        $this->language = trim($language);
+        $this->languageId = $languageId;
         $this->pageId = $pageId;
         $this->path = trim($path);
         $this->filename = trim($filename);
@@ -245,25 +255,48 @@ class DocumentMetadata
 
 
     /**
-     * Returns the language uid.
+     * Returns the ISO language code.
      *
-     * @return int Language uid.
+     * @return string ISO language code.
      */
-    public function getLanguage(): int
+    public function getLanguage(): string
     {
         return $this->language;
     }
 
 
     /**
-     * Sets the language uid.
+     * Sets the ISO language code.
      *
-     * @param int $language Language uid.
+     * @param string $language ISO language code.
      * @return void
      */
-    public function setLanguage(int $language): void
+    public function setLanguage(string $language): void
     {
-        $this->language = $language;
+        $this->language = trim($language);
+    }
+
+
+    /**
+     * Returns the TYPO3 language uid.
+     *
+     * @return int Language uid or -1 when unset.
+     */
+    public function getLanguageId(): int
+    {
+        return $this->languageId;
+    }
+
+
+    /**
+     * Sets the TYPO3 language uid.
+     *
+     * @param int $languageId Language uid.
+     * @return void
+     */
+    public function setLanguageId(int $languageId): void
+    {
+        $this->languageId = $languageId;
     }
 
 
@@ -414,6 +447,7 @@ class DocumentMetadata
             'title' => $this->title,
             'url' => $this->url,
             'language' => $this->language,
+            'language_id' => $this->languageId,
             'page_id', 'pageId' => $this->pageId,
             'path' => $this->path,
             'filename' => $this->filename,
@@ -463,6 +497,7 @@ class DocumentMetadata
             'title' => $this->title,
             'url' => $this->url,
             'language' => $this->language,
+            'language_id' => $this->languageId,
             'page_id' => $this->pageId,
             'path' => $this->path,
             'filename' => $this->filename,
@@ -492,6 +527,7 @@ class DocumentMetadata
                 'title',
                 'url',
                 'language',
+                'language_id',
                 'page_id',
                 'path',
                 'filename',
@@ -509,7 +545,8 @@ class DocumentMetadata
             (string)($data['source_identifier'] ?? $data['source_id'] ?? ''),
             (string)($data['title'] ?? ''),
             (string)($data['url'] ?? ''),
-            (int)($data['language'] ?? 0),
+             (string)($data['language'] ?? ''),
+             (int)($data['language_id'] ?? -1),
             (int)($data['page_id'] ?? 0),
             (string)($data['path'] ?? ''),
             (string)($data['filename'] ?? ''),

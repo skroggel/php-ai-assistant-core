@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Indexing\Adapter;
 
 use Madj2k\AiCore\DTO\DocumentMetadata;
+use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
 
 /**
  * Class PlainAdapter
@@ -65,8 +66,13 @@ final class PlainAdapter implements AdapterInterface
     /**
      * @inheritDoc
      */
-    public function extract(string $path, DocumentMetadata $metadata): string
+    public function extract(string $path, DocumentMetadata $metadata): ?IndexableDocument
     {
-        return trim((string)file_get_contents($path));
+        $content = file_get_contents($path);
+        if ($content === false) {
+            return null;
+        }
+
+        return new IndexableDocument(trim($content), $metadata);
     }
 }

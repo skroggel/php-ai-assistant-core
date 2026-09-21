@@ -67,19 +67,21 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
     /**
      * @inheritDoc
      */
-    public function extract(string $path, DocumentMetadata $metadata): string
+    public function extract(string $path, DocumentMetadata $metadata): ?IndexableDocument
     {
-        /** @var string $raw */
-        $raw = (string)file_get_contents($path);
+        $raw = file_get_contents($path);
+        if ($raw === false) {
+            return null;
+        }
         $extension = strtolower((string)pathinfo($path, PATHINFO_EXTENSION));
         $decoded = $this->decodeByExtension($raw, $extension);
 
         if ($decoded === null) {
-            return trim($raw);
+            return new IndexableDocument(trim($raw), $metadata);
         }
 
         if (!is_array($decoded)) {
-            return trim((string)$decoded);
+            return new IndexableDocument(trim((string)$decoded), $metadata);
         }
 
         /** @var array<string, mixed> $configuration */
@@ -94,11 +96,11 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
         }
 
         if ($textFields !== []) {
-            return trim($this->extractConfiguredText($decoded, $textFields));
+            return new IndexableDocument(trim($this->extractConfiguredText($decoded, $textFields)), $metadata);
         }
 
         $metadata->addAdditional('json', $decoded);
-        return trim($this->flatten($decoded));
+        return new IndexableDocument(trim($this->flatten($decoded)), $metadata);
     }
 
 
@@ -113,9 +115,8 @@ final class JsonAdapter implements AdapterInterface, MultiDocumentAdapterInterfa
         $decoded = $this->decodeByExtension($raw, $extension);
 
         if ($decoded === null || !is_array($decoded) || !$this->containsMultipleDocuments($decoded)) {
-            return [
-                new IndexableDocument($this->extract($path, $metadata), $metadata),
-            ];
+            $document = $this->extract($path, $metadata);
+            return $document === null ? [] : [$document];
         }
 
         /** @var array<int, array<int|string, mixed>> $records */
