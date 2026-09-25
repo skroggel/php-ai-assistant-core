@@ -28,6 +28,7 @@ use Madj2k\AiCore\Connection\Ai\DTO\AiResponse;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse;
 use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
+use Madj2k\AiCore\Connection\Authentication\OAuth2ClientCredentialsTokenProvider;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Factory\GeminiClientFactory;
 use Madj2k\AiCore\Connection\Factory\GeminiClientFactoryInterface;
@@ -299,9 +300,34 @@ final class GeminiConnector extends AbstractConnector implements AiConnectorInte
                 continue;
             }
 
+            $parts = [];
+            $metadata = $message->getMetadata();
+            if (is_array($metadata['tool_calls'] ?? null)) {
+                foreach ($metadata['tool_calls'] as $toolCall) {
+                    if (is_array($toolCall)) {
+                        $parts[] = [
+                            'functionCall' => [
+                                'name' => (string)($toolCall['name'] ?? ''),
+                                'args' => is_array($toolCall['arguments'] ?? null) ? $toolCall['arguments'] : [],
+                            ],
+                        ];
+                    }
+                }
+            } elseif ($message->getRole() === 'tool') {
+                $decodedContent = json_decode($message->getContent(), true);
+                $parts[] = [
+                    'functionResponse' => [
+                        'name' => (string)($metadata['tool_name'] ?? ''),
+                        'response' => is_array($decodedContent) ? $decodedContent : ['content' => $message->getContent()],
+                    ],
+                ];
+            } else {
+                $parts[] = ['text' => $message->getContent()];
+            }
+
             $contents[] = [
-                'role' => $this->mapRole($message),
-                'parts' => [['text' => $message->getContent()]],
+                'role' => $message->getRole() === 'tool' ? 'user' : $this->mapRole($message),
+                'parts' => $parts,
             ];
         }
 
@@ -317,10 +343,22 @@ final class GeminiConnector extends AbstractConnector implements AiConnectorInte
             $payload['systemInstruction'] = ['parts' => $systemParts];
         }
 
+        $requestOptions = $request->getOptions();
+        $tools = $requestOptions['tools'] ?? [];
+        if (is_array($tools) && $tools !== []) {
+            $payload['tools'] = [[
+                'functionDeclarations' => array_values(array_filter(array_map(
+                    static fn (mixed $tool): mixed => is_array($tool) ? ($tool['function'] ?? null) : null,
+                    $tools,
+                ), 'is_array')),
+            ]];
+            unset($requestOptions['tools']);
+        }
+
         return array_replace_recursive(
             $payload,
             $this->resolveConnectionOptions($connection, 'chat'),
-            $request->getOptions(),
+            $requestOptions,
         );
     }
 
@@ -488,16 +526,24 @@ final class GeminiConnector extends AbstractConnector implements AiConnectorInte
         array $payload,
         bool $stream = false,
     ): ResponseInterface {
-        if ($connection->getApiKey() === '') {
+        $usesOAuth = method_exists($connection, 'getAuthentication')
+            && $connection->getAuthentication() === 'oauth_client_credentials';
+        if ($connection->getApiKey() === '' && !$usesOAuth) {
             throw new ApiException('Missing Gemini API key in selected AI connection.', 1788441644);
         }
 
+        $headers = [
+            'Accept' => $stream ? 'text/event-stream' : 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+        if (method_exists($connection, 'getAuthentication') && $connection->getAuthentication() === 'oauth_client_credentials') {
+            $headers['Authorization'] = 'Bearer ' . (new OAuth2ClientCredentialsTokenProvider())->resolve($connection);
+        } else {
+            $headers['x-goog-api-key'] = $connection->getApiKey();
+        }
+
         return $this->createClient($connection)->request('POST', $url, [
-            'headers' => [
-                'Accept' => $stream ? 'text/event-stream' : 'application/json',
-                'Content-Type' => 'application/json',
-                'x-goog-api-key' => $connection->getApiKey(),
-            ],
+            'headers' => $headers,
             'json' => $payload,
             'http_errors' => false,
             'stream' => $stream,
@@ -516,6 +562,9 @@ final class GeminiConnector extends AbstractConnector implements AiConnectorInte
         $cacheKey = sha1(implode('|', [
             $connection->getApiKey(),
             $connection->getBaseUrl(),
+            method_exists($connection, 'getAuthentication') ? (string)$connection->getAuthentication() : 'api_key',
+            method_exists($connection, 'getOauthTokenEndpoint') ? (string)$connection->getOauthTokenEndpoint() : '',
+            method_exists($connection, 'getOauthClientId') ? (string)$connection->getOauthClientId() : '',
         ]));
 
         if (!isset($this->clients[$cacheKey])) {

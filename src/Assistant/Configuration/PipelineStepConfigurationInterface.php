@@ -246,6 +246,13 @@ interface PipelineStepConfigurationInterface
      */
     public function getFailureStrategy(): AssistantPipelineFailureStrategy;
 
+    /**
+     * Returns optional MCP connections overriding the assistant profile default.
+     *
+     * @return iterable<object> MCP connection configurations.
+     */
+    public function getMcpConnections(): iterable;
+
 
     /**
      * Determines whether the configured processor calls an LLM.

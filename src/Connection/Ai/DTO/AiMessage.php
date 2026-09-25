@@ -177,14 +177,34 @@ final class AiMessage
     /**
      * Converts the message into an API-compatible array.
      *
-     * @return array{role: string, content: string} API-compatible message.
+     * @return array<string, mixed> API-compatible message.
      */
     public function toApiArray(): array
     {
-        return [
+        $message = [
             'role' => $this->role,
             'content' => $this->content,
         ];
+
+        if (isset($this->metadata['tool_calls']) && is_array($this->metadata['tool_calls'])) {
+            $message['tool_calls'] = array_map(
+                static fn (array $toolCall): array => [
+                    'id' => (string)($toolCall['id'] ?? ''),
+                    'type' => 'function',
+                    'function' => [
+                        'name' => (string)($toolCall['name'] ?? ''),
+                        'arguments' => json_encode($toolCall['arguments'] ?? [], JSON_THROW_ON_ERROR),
+                    ],
+                ],
+                array_values(array_filter($this->metadata['tool_calls'], 'is_array')),
+            );
+        }
+
+        if (isset($this->metadata['tool_call_id'])) {
+            $message['tool_call_id'] = (string)$this->metadata['tool_call_id'];
+        }
+
+        return $message;
     }
 
 

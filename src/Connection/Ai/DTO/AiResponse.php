@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Connection\Ai\DTO;
 
+use Madj2k\AiCore\Assistant\Tool\DTO\ToolCall;
+
 /**
  * Class AiResponse
  *
@@ -93,6 +95,48 @@ final class AiResponse
     public function getRawResponse(): array
     {
         return $this->rawResponse;
+    }
+
+
+    /**
+     * Returns normalized tool calls from provider response data.
+     *
+     * Supports OpenAI-compatible tool calls and Gemini function calls.
+     *
+     * @return array<int, \Madj2k\AiCore\Assistant\Tool\DTO\ToolCall> Tool calls.
+     */
+    public function getToolCalls(): array
+    {
+        $calls = [];
+        $raw = $this->rawResponse;
+
+        foreach ((array)($raw['choices'][0]['message']['tool_calls'] ?? []) as $toolCall) {
+            if (!is_array($toolCall) || !is_array($toolCall['function'] ?? null)) {
+                continue;
+            }
+
+            $arguments = json_decode((string)($toolCall['function']['arguments'] ?? '{}'), true);
+            $calls[] = new ToolCall(
+                id: (string)($toolCall['id'] ?? uniqid('tool_', true)),
+                name: (string)($toolCall['function']['name'] ?? ''),
+                arguments: is_array($arguments) ? $arguments : [],
+            );
+        }
+
+        foreach ((array)($raw['candidates'][0]['content']['parts'] ?? []) as $part) {
+            if (!is_array($part) || !is_array($part['functionCall'] ?? null)) {
+                continue;
+            }
+
+            $functionCall = $part['functionCall'];
+            $calls[] = new ToolCall(
+                id: (string)($functionCall['id'] ?? uniqid('tool_', true)),
+                name: (string)($functionCall['name'] ?? ''),
+                arguments: is_array($functionCall['args'] ?? null) ? $functionCall['args'] : [],
+            );
+        }
+
+        return array_values(array_filter($calls, static fn (ToolCall $call): bool => $call->name !== ''));
     }
 
 

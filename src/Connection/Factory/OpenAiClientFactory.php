@@ -23,6 +23,7 @@ namespace Madj2k\AiCore\Connection\Factory;
 
 use GuzzleHttp\Client as HttpClient;
 use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
+use Madj2k\AiCore\Connection\Authentication\OAuth2ClientCredentialsTokenProvider;
 use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
 use OpenAI\Contracts\ClientContract;
 
@@ -45,7 +46,7 @@ final class OpenAiClientFactory implements OpenAiClientFactoryInterface
         RetryPolicy $policy,
     ): ClientContract {
         $factory = \OpenAI::factory()
-            ->withApiKey($connection->getApiKey())
+            ->withApiKey((new OAuth2ClientCredentialsTokenProvider())->resolve($connection))
             ->withHttpClient(new HttpClient([
                 'timeout' => $policy->getTimeoutSeconds(),
                 'connect_timeout' => $policy->getConnectTimeoutSeconds(),

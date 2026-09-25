@@ -265,13 +265,18 @@ final class OpenAiConnector extends AbstractConnector implements AiConnectorInte
             $connection->getBaseUrl(),
             $connection->getOrganization(),
             $connection->getProject(),
+            method_exists($connection, 'getAuthentication') ? (string)$connection->getAuthentication() : 'api_key',
+            method_exists($connection, 'getOauthTokenEndpoint') ? (string)$connection->getOauthTokenEndpoint() : '',
+            method_exists($connection, 'getOauthClientId') ? (string)$connection->getOauthClientId() : '',
         ]));
 
         if (isset($this->clients[$cacheKey])) {
             return $this->clients[$cacheKey];
         }
 
-        if ($connection->getApiKey() === '') {
+        $usesOAuth = method_exists($connection, 'getAuthentication')
+            && $connection->getAuthentication() === 'oauth_client_credentials';
+        if ($connection->getApiKey() === '' && !$usesOAuth) {
             throw new ApiException('Missing OpenAI API key in selected AI connection.', 1780573101);
         }
 

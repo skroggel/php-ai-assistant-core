@@ -78,6 +78,24 @@ The Gemini connector maps both purposes to the corresponding task types for
 `gemini-embedding-001`. OpenAI currently has no equivalent request parameter and therefore leaves
 the purpose unused. Requests without an explicit purpose retain the previous behavior.
 
+## AI connection authentication
+
+AI connectors support two authentication modes:
+
+* API key authentication, where the configured API key is sent to the provider;
+* OAuth 2.0 Client Credentials, where the connector obtains a bearer access token from the
+  configured token endpoint.
+
+The OAuth token provider caches tokens in memory and renews them before expiry. Connection
+configuration objects may expose OAuth settings through `getAuthentication()`,
+`getOauthTokenEndpoint()`, `getOauthClientId()`, `getOauthClientSecret()` and `getOauthScope()`.
+Legacy configuration objects that only expose `getApiKey()` continue to use API-key
+authentication.
+
+OAuth client secrets and access tokens must not be written to logs. Authorization Code or
+interactive PKCE flows are intentionally outside the framework-independent connector contract;
+they require application-specific user interaction and callback handling.
+
 ## Pipeline configuration
 
 Pipeline steps run in their configured order. Their stage describes the semantic position of the
@@ -126,6 +144,24 @@ Answer generators and quality gates should normally use `stop`, because they def
 answer. During streaming, only the final answer-producing step streams to the user. Once that step
 has emitted data, its failure always stops execution to avoid returning a partial answer as if it
 were complete.
+
+## Tool calling
+
+AI Core provides a provider-neutral tool-calling layer. Tool providers implement
+`ToolProviderInterface` and expose `ToolDefinition` objects. The runtime normalizes model tool
+calls to `ToolCall` and returns provider-independent `ToolResult` objects.
+
+The `ToolRegistry` collects providers through dependency injection. The `ToolCallingService` runs a
+bounded model/tool loop: the model receives the available definitions, requests tool calls, the
+registry executes them, and the results are returned to the model until it produces an answer or
+the round limit is reached.
+
+Context-dependent providers can implement `ContextAwareToolProviderInterface`. Host applications
+can then restrict tools to the active assistant profile and pipeline step. Providers must enforce
+their own authorization and input validation; a model-provided schema is not a security boundary.
+
+MCP is integrated by `madj2k/ai-mcp`, which maps MCP tools to these core contracts. AI Core does
+not depend on the MCP protocol and can also be used with local or application-specific providers.
 
 ## Logging and diagnostics
 
