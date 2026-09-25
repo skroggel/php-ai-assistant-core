@@ -38,6 +38,7 @@ use Madj2k\AiCore\Connection\Resilience\RetryExhaustedException;
 use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
 use Madj2k\AiCore\Exception\ApiException;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -706,23 +707,40 @@ final class GeminiConnector extends AbstractConnector implements AiConnectorInte
     protected function consumeEventStream(ResponseInterface $response, callable $onEvent): void
     {
         $body = $response->getBody();
-        $buffer = '';
         /** @var array<int, string> $dataLines */
         $dataLines = [];
 
-        while (!$body->eof()) {
-            $buffer .= $body->read(8192);
-            while (($lineEnd = strpos($buffer, "\n")) !== false) {
-                $line = rtrim(substr($buffer, 0, $lineEnd), "\r");
-                $buffer = substr($buffer, $lineEnd + 1);
-                $this->consumeEventLine($line, $dataLines, $onEvent);
-            }
+        while (($line = $this->readEventStreamLine($body)) !== null) {
+            $this->consumeEventLine($line, $dataLines, $onEvent);
         }
 
-        if ($buffer !== '') {
-            $this->consumeEventLine(rtrim($buffer, "\r"), $dataLines, $onEvent);
-        }
         $this->dispatchEvent($dataLines, $onEvent);
+    }
+
+
+    /**
+     * Reads one SSE line without waiting for a large response buffer to fill.
+     *
+     * @param \Psr\Http\Message\StreamInterface $body Streaming response body.
+     * @return string|null Next line without its line ending, or null at EOF.
+     */
+    protected function readEventStreamLine(StreamInterface $body): ?string
+    {
+        $line = '';
+
+        while (!$body->eof()) {
+            $byte = $body->read(1);
+            if ($byte === '') {
+                return $line !== '' ? rtrim($line, "\r") : null;
+            }
+            if ($byte === "\n") {
+                return rtrim($line, "\r");
+            }
+
+            $line .= $byte;
+        }
+
+        return $line !== '' ? rtrim($line, "\r") : null;
     }
 
 

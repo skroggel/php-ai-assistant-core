@@ -17,6 +17,8 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\StreamDecoratorTrait;
+use GuzzleHttp\Psr7\Utils;
 use Madj2k\AiCore\Connection\Ai\DTO\AiMessage;
 use Madj2k\AiCore\Connection\Ai\DTO\AiRequest;
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
@@ -28,6 +30,7 @@ use Madj2k\AiCore\Connection\Factory\GeminiClientFactoryInterface;
 use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * Class GeminiConnectorTest
@@ -132,6 +135,43 @@ SSE;
             ':streamGenerateContent?alt=sse',
             (string)$this->historyRequest($history, 0)->getUri(),
         );
+    }
+
+    /**
+     * @throws \Madj2k\AiCore\Exception\ApiException If the mocked Gemini stream fails.
+     */
+    public function testReadsStreamIncrementally(): void
+    {
+        /** @var \ArrayObject<int, array<mixed>> $history */
+        $history = new ArrayObject();
+        $stream = new class(Utils::streamFor(
+            "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hallo\"}]}}]}\n\n",
+        )) implements StreamInterface {
+            use StreamDecoratorTrait;
+
+            private StreamInterface $stream;
+
+            /** @var array<int, int> */
+            public array $readLengths = [];
+
+            public function read($length): string
+            {
+                $this->readLengths[] = $length;
+                return $this->stream->read($length);
+            }
+        };
+        $connector = $this->createConnector([
+            new Response(200, ['Content-Type' => 'text/event-stream'], $stream),
+        ], $history);
+
+        $connector->streamChat(
+            $this->connection(),
+            new AiRequest([new AiMessage('user', 'Hallo?')]),
+            static function (string $chunk): void {},
+        );
+
+        self::assertNotEmpty($stream->readLengths);
+        self::assertSame([1], array_values(array_unique($stream->readLengths)));
     }
 
     /**
