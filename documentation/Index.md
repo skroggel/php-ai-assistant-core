@@ -13,21 +13,21 @@ be replaced or extended independently.
 
 If you are new to the library, read the documentation in this order:
 
-1.  [Architecture](concepts/architecture.rst) - components and
+1.  [Architecture](concepts/architecture.md) - components and
     responsibilities.
-2.  [Assistant request lifecycle](workflows/assistant-request.rst) -
+2.  [Assistant request lifecycle](workflows/assistant-request.md) -
     what happens during one chat turn.
-3.  [Pipeline runtime](concepts/pipeline.rst) - step resolution,
+3.  [Pipeline runtime](concepts/pipeline.md) - step resolution,
     skipping, failures and streaming.
-4.  [Context and state](concepts/context.rst) - how processors exchange
+4.  [Context and state](concepts/context.md) - how processors exchange
     data.
-5.  [Prompt construction](concepts/prompting.rst) - system prompt,
+5.  [Prompt construction](concepts/prompting.md) - system prompt,
     history and dynamic context.
-6.  [Retrieval](concepts/retrieval.rst) - embeddings, vector search and
+6.  [Retrieval](concepts/retrieval.md) - embeddings, vector search and
     retrieval groups.
-7.  [Indexing](workflows/indexing.rst) - chunking, embeddings,
+7.  [Indexing](workflows/indexing.md) - chunking, embeddings,
     generations and vector writes.
-8.  [Extension points](extending/overview.rst) - where custom
+8.  [Extension points](extending/overview.md) - where custom
     implementations plug in.
 
 ## Architectural principles
@@ -68,7 +68,7 @@ The codebase follows a few important principles:
 ## Documentation conventions
 
 The developer guide focuses on **runtime contracts and control flow**,
-not just class signatures. The [API reference](reference/api.rst)
+not just class signatures. The [API reference](reference/api.md)
 complements this with a compact class/interface inventory.
 
 <div class="toctree" hidden="">
