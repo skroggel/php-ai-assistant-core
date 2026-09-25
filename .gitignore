@@ -1,4 +1,20 @@
-/vendor/
-/composer.lock
-/.phpunit.cache/
-/.phpunit.result.cache
+# Version 1.0.2
+# =======================================================
+# Ignore Editor-files, vendor and other basic stuff
+# =======================================================
+.DS_Store
+node_modules
+bower_components
+
+/.build
+/.buildpath
+/.bowerrc
+/.bundle
+/.env
+/.idea
+/.settings
+/.project
+/.php-version
+# documentation-GENERATED-temp/
+/vendor
+

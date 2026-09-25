@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prompt Construction</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="prompt-construction">
+            <h1>Prompt Construction</h1>
+            
+    <p>LLM-based processors use <code>PromptBuilder</code> rather than creating prompts
+directly.</p>
+
+            <div class="section" id="message-shape">
+            <h2>Message shape</h2>
+            
+    <p>Each LLM step receives two messages:</p>
+
+            <pre><code class="language-text">system
+  assistant-level rules
+  step-level rules
+  runtime response requirements
+
+user
+  optional chat history
+  dynamic prompt context sections</code></pre>
+
+            
+    <p><code>PromptBuilder::buildMessages()</code> returns plain arrays, which
+<code>AbstractLlmProcessor</code> converts into <code>AiMessage</code> DTOs before
+invoking an AI connector.</p>
+
+    </div>
+            <div class="section" id="system-prompt-composition">
+            <h2>System prompt composition</h2>
+            
+    <p>The system prompt may include assistant-level sections depending on step
+configuration:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>[Assistant Identity]</code></li>
+    <li class="dash"><code>[Assistant Behavior Rules]</code></li>
+    <li class="dash"><code>[Assistant Retrieval Rules]</code></li>
+    <li class="dash"><code>[Assistant Output Rules]</code></li>
+</ul>
+
+            
+    <p>It can also include step-specific sections:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>[Step Identity]</code></li>
+    <li class="dash"><code>[Step Behavior Rules]</code></li>
+    <li class="dash"><code>[Step Retrieval Rules]</code></li>
+    <li class="dash"><code>[Step Output Rules]</code></li>
+</ul>
+
+            
+    <p>For <code>AnswerGenerator</code> and <code>QualityGate</code>, runtime chat options can
+add explicit response-language and plain-language instructions.</p>
+
+            
+    <p>A final precedence instruction states that runtime
+response/accessibility requirements win over assistant/step output
+preferences; assistant rules otherwise take precedence over step rules.</p>
+
+    </div>
+            <div class="section" id="history">
+            <h2>History</h2>
+            
+    <p>History is controlled per pipeline step through <code>HistoryMode</code>.</p>
+
+            
+    <p><code>None</code> adds no history. <code>LastN</code> uses
+<code>History::last(getHistoryLimit())</code> and serializes messages as:</p>
+
+            <pre><code class="language-text">[Chat History]
+user: ...
+assistant: ...</code></pre>
+
+    </div>
+            <div class="section" id="dynamic-context-builders">
+            <h2>Dynamic context builders</h2>
+            
+    <p>The user-side context is extensible through <code>ContextBuilderInterface</code>.</p>
+
+            <pre><code class="language-mermaid">flowchart LR
+    Context --&gt; Registry[ContextBuilderRegistry]
+    Step --&gt; Registry
+    Registry --&gt; Builders[matching ContextBuilderInterface instances]
+    Builders --&gt; Sections[PromptSection[]]
+    Sections --&gt; Sort[sort by priority]
+    Sort --&gt; Formatter
+    Formatter --&gt; UserPrompt[formatted context]</code></pre>
+
+            
+    <p>Built-in builders include:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>QueryContextBuilder</code> - original/current query;</li>
+    <li class="dash"><code>RetrievalContextBuilder</code> - retrieved/answer context;</li>
+    <li class="dash"><code>AnswerCandidateContextBuilder</code> - answer candidate for quality-gate
+steps.</li>
+</ul>
+
+            
+    <p>A custom builder can add new context without modifying
+<code>PromptBuilder</code>.</p>
+
+    </div>
+            <div class="section" id="retrieval-attribution">
+            <h2>Retrieval attribution</h2>
+            
+    <p>When <code>ContextOptimizerProcessor</code> runs with retrieval groups, it adds a
+system instruction requiring <code>[Retrieval: ...]</code> identifiers and
+attribution boundaries to be preserved.</p>
+
+            
+    <p><code>RetrievalContextBuilder</code> constructs grouped retrieval sections and
+applies per-group/global context limits. When multiple retrieval groups
+exist, its global character limiter distributes space across groups
+instead of simply truncating everything after the first groups.</p>
+
+    </div>
+            <div class="section" id="design-guidance">
+            <h2>Design guidance</h2>
+            
+    <p>Use assistant-level rules for stable behavior shared across many steps.
+Use step-level rules for the narrow responsibility of one processor. Use
+context builders for structured runtime data; avoid embedding dynamic
+application state directly into static assistant prompts.</p>
+
+    </div>
+    </div>
+<!-- content end -->
+</body>
+</html>

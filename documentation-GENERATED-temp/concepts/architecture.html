@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Architecture</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="architecture">
+            <h1>Architecture</h1>
+            
+    <p>AI Core has two primary execution paths:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">an <strong>assistant path</strong>, which receives a user request and executes a
+configurable pipeline;</li>
+    <li value="2">an <strong>indexing path</strong>, which turns source content into vectors used by
+retrieval.</li>
+</ol>
+
+            <div class="section" id="assistant-architecture">
+            <h2>Assistant architecture</h2>
+            <pre><code class="language-mermaid">flowchart LR
+    Request[AssistantRequest] --&gt; Orchestrator
+    Orchestrator --&gt; Memory[(Memory)]
+    Orchestrator --&gt; ContextFactory
+    ContextFactory --&gt; Context
+    Orchestrator --&gt; Pipeline
+    Pipeline --&gt; Registry[ProcessorRegistry]
+    Registry --&gt; Processor[ProcessorInterface]
+    Processor --&gt; Context
+    Processor --&gt; PromptBuilder
+    Processor --&gt; AI[AiConnectorInterface]
+    Processor --&gt; VS[VectorStoreConnectorInterface]
+    Pipeline --&gt; Response[AssistantResponse]
+    Response --&gt; Orchestrator
+    Orchestrator --&gt; Memory</code></pre>
+
+            <div class="section" id="orchestrator">
+            <h3>Orchestrator</h3>
+            
+    <p><code>Assistant\Application\Orchestrator</code> owns the lifecycle of one
+assistant interaction. It is responsible for:</p>
+
+            
+
+<ul>
+    <li class="dash">validating/resolving the request and assistant profile;</li>
+    <li class="dash">starting conversation memory;</li>
+    <li class="dash">loading history;</li>
+    <li class="dash">creating the runtime <code>Context</code>;</li>
+    <li class="dash">resolving configured pipeline steps;</li>
+    <li class="dash">invoking <code>Pipeline</code> synchronously or in streaming mode;</li>
+    <li class="dash">appending the user query and assistant answer to memory;</li>
+    <li class="dash">opening, finishing and failing chat-level logs.</li>
+</ul>
+
+            
+    <p>It does <strong>not</strong> implement retrieval, prompt generation or
+provider-specific behavior itself.</p>
+
+    </div>
+            <div class="section" id="pipeline">
+            <h3>Pipeline</h3>
+            
+    <p><code>Assistant\Pipeline\Pipeline</code> executes configured steps in the order
+it receives them. For every step it:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">resolves a processor by <code>processorIdentifier + type</code>;</li>
+    <li value="2">asks <code>canProcess()</code> whether required state exists;</li>
+    <li value="3">optionally skips the step;</li>
+    <li value="4">executes <code>process()</code> or <code>processStream()</code>;</li>
+    <li value="5">applies the configured failure strategy;</li>
+    <li value="6">leaves state changes in the shared <code>Context</code>.</li>
+</ol>
+
+    </div>
+            <div class="section" id="context">
+            <h3>Context</h3>
+            
+    <p><code>Assistant\Context\Context</code> is the shared mutable state of one
+pipeline run. It prevents tight coupling between processors. A query
+optimizer can mutate <code>currentQuery</code>; a retriever stores retrieval
+groups; an answer generator writes the answer candidate; a quality gate
+writes the final answer.</p>
+
+    </div>
+            <div class="section" id="prompt-subsystem">
+            <h3>Prompt subsystem</h3>
+            
+    <p>LLM processors delegate prompt assembly to <code>PromptBuilder</code>. Dynamic
+context is supplied by independent <code>ContextBuilderInterface</code>
+implementations and merged by <code>ContextBuilderRegistry</code>.</p>
+
+    </div>
+            <div class="section" id="connector-layer">
+            <h3>Connector layer</h3>
+            
+    <p>The pipeline does not depend directly on OpenAI, Gemini or Qdrant
+implementations. Resolver classes select an implementation by connector
+identifier:</p>
+
+            <pre><code class="language-text">configuration
+    -&gt; connector identifier
+    -&gt; resolver
+    -&gt; connector interface
+    -&gt; concrete provider implementation</code></pre>
+
+    </div>
+    </div>
+            <div class="section" id="indexing-architecture">
+            <h2>Indexing architecture</h2>
+            <pre><code class="language-mermaid">flowchart LR
+    Source[Source] --&gt; Adapter[AdapterInterface]
+    Adapter --&gt; Doc[IndexableDocument]
+    Doc --&gt; Chunker[TextChunker]
+    Chunker --&gt; Embeddings[AiConnectorInterface / embedBatch]
+    Embeddings --&gt; Vectors[VectorDocument[]]
+    Vectors --&gt; Store[VectorStoreConnectorInterface]</code></pre>
+
+            
+    <p><code>VectorDocumentIndexer</code> is the core provider-independent indexing
+service. Higher-level source-specific <code>IndexerInterface</code>
+implementations can use adapters and this service to build concrete
+indexing workflows.</p>
+
+    </div>
+            <div class="section" id="dependency-direction">
+            <h2>Dependency direction</h2>
+            
+    <p>A useful mental model is:</p>
+
+            <pre><code class="language-text">Application / configuration
+        ↓
+Core orchestration and contracts
+        ↓
+Resolvers / registries
+        ↓
+Provider and infrastructure implementations</code></pre>
+
+            
+    <p>Custom code should generally depend on the contracts
+(<code>ProcessorInterface</code>, <code>AiConnectorInterface</code>,
+<code>VectorStoreConnectorInterface</code>, <code>MemoryInterface</code>,
+<code>AdapterInterface</code>, <code>IndexerInterface</code>, <code>ContextBuilderInterface</code>)
+rather than on concrete standard implementations.</p>
+
+    </div>
+    </div>
+<!-- content end -->
+</body>
+</html>

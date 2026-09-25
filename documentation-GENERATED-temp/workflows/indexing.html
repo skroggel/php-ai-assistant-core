@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vector Indexing Lifecycle</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="vector-indexing-lifecycle">
+            <h1>Vector Indexing Lifecycle</h1>
+            
+    <p><code>VectorDocumentIndexer</code> converts one normalized <code>IndexableDocument</code>
+into vector documents and updates a vector-store collection safely.</p>
+
+            <div class="section" id="flow">
+            <h2>Flow</h2>
+            <pre><code class="language-mermaid">flowchart TD
+    D[IndexableDocument] --&gt; C[TextChunker]
+    C --&gt; Empty{chunks?}
+    Empty -- no --&gt; Z[return 0]
+    Empty -- yes --&gt; Dry{dry run?}
+    Dry -- yes --&gt; Count[return chunk count]
+    Dry -- no --&gt; E[embedBatch]
+    E --&gt; Dim[validate dimensions]
+    Dim --&gt; V[create VectorDocument[]]
+    V --&gt; U[upsert new vectors]
+    U --&gt; OldHash[delete explicitly obsolete source hashes]
+    OldHash --&gt; Gen[delete obsolete generations for current source]
+    Gen --&gt; Result[return written count]</code></pre>
+
+    </div>
+            <div class="section" id="collection-resolution">
+            <h2>Collection resolution</h2>
+            
+    <p><code>resolveCollection()</code> uses this precedence:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">explicit collection override;</li>
+    <li value="2"><code>IndexingConfigurationInterface::getCollection()</code>;</li>
+    <li value="3">vector-store connection default collection.</li>
+</ol>
+
+            
+    <p><code>index()</code> itself requires a non-empty collection name.</p>
+
+    </div>
+            <div class="section" id="chunking">
+            <h2>Chunking</h2>
+            
+    <p>The indexer delegates to <code>TextChunker</code> with configured values for:</p>
+
+            
+
+<ul>
+    <li class="dash">chunk size;</li>
+    <li class="dash">overlap;</li>
+    <li class="dash">maximum chunk count;</li>
+    <li class="dash">minimum chunk characters.</li>
+</ul>
+
+            
+    <p>Non-positive configuration values are passed as <code>null</code>, allowing
+<code>TextChunker</code> defaults to apply.</p>
+
+    </div>
+            <div class="section" id="dry-runs">
+            <h2>Dry runs</h2>
+            
+    <p>A dry run performs chunking only and returns the number of chunks that
+would be processed. It does not require AI/vector-store connectivity and
+does not generate embeddings.</p>
+
+    </div>
+            <div class="section" id="embeddings">
+            <h2>Embeddings</h2>
+            
+    <p>Every chunk becomes an <code>EmbeddingRequest</code> with
+<code>EmbeddingPurpose::RetrievalDocument</code>. Requests are sent as a batch
+through the configured AI connector.</p>
+
+            
+    <p>The indexer verifies two invariants:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">all non-empty provider embeddings have the same dimension;</li>
+    <li value="2">the actual dimension matches
+<code>AiConnectionConfigurationInterface::getEmbeddingDimension()</code>.</li>
+</ol>
+
+            
+    <p>A mismatch raises <code>IndexingException</code> rather than writing incompatible
+vectors.</p>
+
+    </div>
+            <div class="section" id="source-identity">
+            <h2>Source identity</h2>
+            
+    <p><code>SourceIdentityGenerator</code> creates a stable source hash and
+deterministic vector-document IDs based on source identity plus chunk
+index.</p>
+
+            
+    <p>The index generation is a SHA-256 hash over chunk lengths and contents.
+It therefore changes when content <strong>or chunk boundaries</strong> change.</p>
+
+    </div>
+            <div class="section" id="safe-replacement-order">
+            <h2>Safe replacement order</h2>
+            
+    <p>The write order is intentional:</p>
+
+            <pre><code class="language-text">1. upsert new generation
+2. delete explicitly obsolete source hashes
+3. delete obsolete generations for current source hash</code></pre>
+
+            
+    <p>New vectors are therefore available before old generations are removed.
+A failed upsert does not first delete the currently indexed source
+generation.</p>
+
+    </div>
+            <div class="section" id="adapters-and-higher-level-indexers">
+            <h2>Adapters and higher-level indexers</h2>
+            
+    <p><code>AdapterInterface</code> converts a source path to normalized text.
+<code>MultiDocumentAdapterInterface</code> can split one source into multiple
+<code>IndexableDocument</code> instances.</p>
+
+            
+    <p><code>IndexerInterface</code> represents a higher-level source-specific indexing
+workflow. <code>IndexerRegistry</code> resolves indexers by identifier or source
+type.</p>
+
+            
+    <p>The library currently includes <code>PlainAdapter</code> and <code>JsonAdapter</code> as
+concrete text adapters.</p>
+
+    </div>
+    </div>
+<!-- content end -->
+</body>
+</html>

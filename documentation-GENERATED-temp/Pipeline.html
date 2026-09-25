@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pipeline</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="pipeline">
+            <a id="ai-core-pipeline"></a>
+            <h1>Pipeline</h1>
+            
+    <p>Pipeline steps run in configured order. Their stage describes semantic position and does not reorder
+the steps. A common retrieval-augmented pipeline is:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">Query optimizer;</li>
+    <li value="2">retriever;</li>
+    <li value="3">optional context optimizer;</li>
+    <li value="4">answer generator;</li>
+    <li value="5">optional quality gate.</li>
+</ol>
+
+            
+    <p>Failure strategies are:</p>
+
+            
+
+<ul>
+    <li><code>stop</code> aborts execution and rethrows the exception;</li>
+    <li><code>continue</code> logs the failure and runs the next step;</li>
+    <li><code>fallback</code> is a deprecated alias of <code>continue</code>.</li>
+</ul>
+
+            
+    <p>The pipeline validates processor/type compatibility, dependencies, duplicate step identifiers and
+answer-generator or quality-gate constraints before execution.</p>
+
+    </div>
+<!-- content end -->
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pipeline Runtime</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="pipeline-runtime">
+            <h1>Pipeline Runtime</h1>
+            
+    <p>A pipeline is an ordered list of <code>PipelineStepConfigurationInterface</code>
+instances. The step defines <strong>what role</strong> should run, <strong>which
+implementation</strong> should execute it and <strong>how</strong> that execution should be
+configured.</p>
+
+            <div class="section" id="step-selection">
+            <h2>Step selection</h2>
+            
+    <p>Two values determine processor resolution:</p>
+
+            <pre><code class="language-php">$step-&gt;getProcessorIdentifier();
+$step-&gt;getType();</code></pre>
+
+            
+    <p><code>ProcessorRegistry::get()</code> first finds the processor with the
+requested identifier and then verifies that <code>supports($type)</code> returns
+<code>true</code>.</p>
+
+            
+    <p>This separation allows multiple implementations for the same semantic
+processor type.</p>
+
+    </div>
+            <div class="section" id="processor-types">
+            <h2>Processor types</h2>
+            
+    <p><code>AssistantPipelineProcessorType</code> currently defines:</p>
+
+            <table>
+                <thead>
+            <tr>
+                            <th>Type</th>
+                            <th>Typical responsibility</th>
+                    </tr>
+        </thead>
+    <tbody>
+    <tr>
+            <td><code>query_optimizer</code></td>
+            <td>Rewrite/normalize the working query</td>
+    </tr>
+    <tr>
+            <td><code>retriever</code></td>
+            <td>Retrieve source documents</td>
+    </tr>
+    <tr>
+            <td><code>context_optimizer</code></td>
+            <td>Condense retrieval results for answer generation</td>
+    </tr>
+    <tr>
+            <td><code>answer_generator</code></td>
+            <td>Create the answer candidate</td>
+    </tr>
+    <tr>
+            <td><code>quality_gate</code></td>
+            <td>Review/finalize an answer candidate</td>
+    </tr>
+    <tr>
+            <td><code>memory</code></td>
+            <td>Explicitly read/write pipeline state from memory</td>
+    </tr>
+</tbody>
+</table>
+            
+    <p><code>AssistantPipelineStage</code> adds semantic placement (<code>pre_retrieval</code>,
+<code>retrieval</code>, <code>post_retrieval</code>, <code>pre_answer</code>, <code>post_answer</code>).
+Execution order, however, is the order of the provided step iterable;
+stage is metadata/semantics rather than an internal scheduler.</p>
+
+    </div>
+            <div class="section" id="step-execution-algorithm">
+            <h2>Step execution algorithm</h2>
+            <pre><code class="language-mermaid">flowchart TD
+    S[Next configured step] --&gt; R[Resolve processor]
+    R --&gt; C{canProcess?}
+    C -- no --&gt; Skip[log step.skipped]
+    C -- yes --&gt; Exec[process/processStream]
+    Exec --&gt; Ok{success?}
+    Ok -- yes --&gt; S2[Next step]
+    Ok -- no --&gt; F{failure strategy = stop?}
+    F -- yes --&gt; Throw[throw exception]
+    F -- no --&gt; S2</code></pre>
+
+            
+    <p>If <code>canProcess()</code> returns false, no exception is raised; the step is
+skipped and optionally logged.</p>
+
+    </div>
+            <div class="section" id="failure-strategies">
+            <h2>Failure strategies</h2>
+            
+    <p><code>AssistantPipelineFailureStrategy</code> contains:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>Stop</code> - rethrow step failures and abort the pipeline;</li>
+    <li class="dash"><code>Continue</code> - log the failure and continue;</li>
+    <li class="dash"><code>Fallback</code> - deprecated legacy alias; no separate fallback action is
+executed by <code>Pipeline</code>.</li>
+</ul>
+
+            <div class="section" id="streaming-exception-rule">
+            <h3>Streaming exception rule</h3>
+            
+    <p>There is one important override: when the currently streamed visible
+answer step has already emitted data and then fails, the exception is
+rethrown regardless of <code>Continue</code>. This prevents the runtime from
+silently continuing after a partial response has already reached the
+client.</p>
+
+    </div>
+    </div>
+            <div class="section" id="streaming-semantics">
+            <h2>Streaming semantics</h2>
+            
+    <p>Streaming is deliberately limited to the <strong>last configured step whose
+type is either</strong>:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>AnswerGenerator</code>, or</li>
+    <li class="dash"><code>QualityGate</code>.</li>
+</ul>
+
+            
+    <p>Only when that processor implements <code>ProcessorStreamingInterface</code> does
+the pipeline call <code>processStream()</code>.</p>
+
+            
+    <p>All earlier processors run synchronously. If no chunk was emitted, the
+final built response is sent through the callback once after execution.</p>
+
+            
+    <p>This allows a pipeline such as:</p>
+
+            <pre><code class="language-text">QueryOptimizer -&gt; Retriever -&gt; AnswerGenerator -&gt; QualityGate</code></pre>
+
+            
+    <p>to stream the <code>QualityGate</code> result, while <code>AnswerGenerator</code> runs
+synchronously as the candidate producer.</p>
+
+            
+    <p>Without a quality gate, the answer generator becomes the visible
+streaming step.</p>
+
+    </div>
+            <div class="section" id="source-metadata">
+            <h2>Source metadata</h2>
+            
+    <p>Whenever a step has a non-empty <code>getPromptMetadataFieldList()</code>, the
+pipeline remembers that list. The last non-empty list is used when
+converting retrieved documents into frontend <code>sources</code> in
+<code>AssistantResponse</code>.</p>
+
+            
+    <p>Sources are deduplicated primarily by <code>source_identifier</code>, then
+<code>url</code>, then a hash of the source payload.</p>
+
+    </div>
+            <div class="section" id="response-construction">
+            <h2>Response construction</h2>
+            
+    <p>The final response contains:</p>
+
+            <pre><code class="language-text">answer
+context.currentQuery
+context.answerContext
+context.retrievalCount
+context.retrievals[]
+context.sources[]</code></pre>
+
+            
+    <p>The pipeline response intentionally represents a presentation-friendly
+summary; the full mutable <code>Context</code> remains internal to the pipeline
+execution.</p>
+
+    </div>
+    </div>
+<!-- content end -->
+</body>
+</html>

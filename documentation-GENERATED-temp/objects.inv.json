@@ -1,0 +1,794 @@
+{
+    "std:doc": {
+        "Architecture": [
+            "-",
+            "-",
+            "Architecture.html",
+            "Architecture"
+        ],
+        "concepts\/architecture": [
+            "-",
+            "-",
+            "concepts\/architecture.html",
+            "Architecture"
+        ],
+        "concepts\/context": [
+            "-",
+            "-",
+            "concepts\/context.html",
+            "Runtime Context"
+        ],
+        "concepts\/pipeline": [
+            "-",
+            "-",
+            "concepts\/pipeline.html",
+            "Pipeline Runtime"
+        ],
+        "concepts\/prompting": [
+            "-",
+            "-",
+            "concepts\/prompting.html",
+            "Prompt Construction"
+        ],
+        "concepts\/retrieval": [
+            "-",
+            "-",
+            "concepts\/retrieval.html",
+            "Retrieval"
+        ],
+        "Connections": [
+            "-",
+            "-",
+            "Connections.html",
+            "Connections and authentication"
+        ],
+        "cookbook\/standard-rag-pipeline": [
+            "-",
+            "-",
+            "cookbook\/standard-rag-pipeline.html",
+            "Cookbook: Standard RAG Pipeline"
+        ],
+        "extending\/overview": [
+            "-",
+            "-",
+            "extending\/overview.html",
+            "Extension Points"
+        ],
+        "ExtensionPoints": [
+            "-",
+            "-",
+            "ExtensionPoints.html",
+            "Extension points"
+        ],
+        "Index": [
+            "-",
+            "-",
+            "Index.html",
+            "AI Core - Developer Documentation"
+        ],
+        "operations\/observability": [
+            "-",
+            "-",
+            "operations\/observability.html",
+            "Logging, Tracing and Failure Analysis"
+        ],
+        "Pipeline": [
+            "-",
+            "-",
+            "Pipeline.html",
+            "Pipeline"
+        ],
+        "reference\/api": [
+            "-",
+            "-",
+            "reference\/api.html",
+            "API Reference Overview"
+        ],
+        "ToolCalling": [
+            "-",
+            "-",
+            "ToolCalling.html",
+            "Tool calling"
+        ],
+        "workflows\/assistant-request": [
+            "-",
+            "-",
+            "workflows\/assistant-request.html",
+            "Assistant Request Lifecycle"
+        ],
+        "workflows\/indexing": [
+            "-",
+            "-",
+            "workflows\/indexing.html",
+            "Vector Indexing Lifecycle"
+        ]
+    },
+    "std:label": {
+        "ai-core-architecture": [
+            "-",
+            "-",
+            "Architecture.html#ai-core-architecture",
+            "Architecture"
+        ],
+        "original-query-vs-current-query": [
+            "-",
+            "-",
+            "concepts\/context.html#original-query-vs-current-query",
+            "Original query vs. current query"
+        ],
+        "ai-core-connections": [
+            "-",
+            "-",
+            "Connections.html#ai-core-connections",
+            "Connections and authentication"
+        ],
+        "ai-core-extension-points": [
+            "-",
+            "-",
+            "ExtensionPoints.html#ai-core-extension-points",
+            "Extension points"
+        ],
+        "ai-core-developer-documentation": [
+            "-",
+            "-",
+            "Index.html#ai-core--developer-documentation",
+            "AI Core - Developer Documentation"
+        ],
+        "ai-core-pipeline": [
+            "-",
+            "-",
+            "Pipeline.html#ai-core-pipeline",
+            "Pipeline"
+        ],
+        "ai-core-tool-calling": [
+            "-",
+            "-",
+            "ToolCalling.html#ai-core-tool-calling",
+            "Tool calling"
+        ]
+    },
+    "std:title": {
+        "architecture": [
+            "-",
+            "-",
+            "concepts\/architecture.html#architecture",
+            "Architecture"
+        ],
+        "assistant-architecture": [
+            "-",
+            "-",
+            "concepts\/architecture.html#assistant-architecture",
+            "Assistant architecture"
+        ],
+        "orchestrator": [
+            "-",
+            "-",
+            "concepts\/architecture.html#orchestrator",
+            "Orchestrator"
+        ],
+        "pipeline": [
+            "-",
+            "-",
+            "Pipeline.html#ai-core-pipeline",
+            "Pipeline"
+        ],
+        "context": [
+            "-",
+            "-",
+            "reference\/api.html#context",
+            "Context"
+        ],
+        "prompt-subsystem": [
+            "-",
+            "-",
+            "concepts\/architecture.html#prompt-subsystem",
+            "Prompt subsystem"
+        ],
+        "connector-layer": [
+            "-",
+            "-",
+            "concepts\/architecture.html#connector-layer",
+            "Connector layer"
+        ],
+        "indexing-architecture": [
+            "-",
+            "-",
+            "concepts\/architecture.html#indexing-architecture",
+            "Indexing architecture"
+        ],
+        "dependency-direction": [
+            "-",
+            "-",
+            "concepts\/architecture.html#dependency-direction",
+            "Dependency direction"
+        ],
+        "runtime-context": [
+            "-",
+            "-",
+            "concepts\/context.html#runtime-context",
+            "Runtime Context"
+        ],
+        "context-slots": [
+            "-",
+            "-",
+            "concepts\/context.html#context-slots",
+            "Context slots"
+        ],
+        "original-query-vs-current-query-1": [
+            "-",
+            "-",
+            "concepts\/context.html#original-query-vs-current-query",
+            "Original query vs. current query"
+        ],
+        "answer-state": [
+            "-",
+            "-",
+            "concepts\/context.html#answer-state",
+            "Answer state"
+        ],
+        "retrieval-state": [
+            "-",
+            "-",
+            "concepts\/context.html#retrieval-state",
+            "Retrieval state"
+        ],
+        "processing-trace": [
+            "-",
+            "-",
+            "concepts\/context.html#processing-trace",
+            "Processing trace"
+        ],
+        "processor-contract": [
+            "-",
+            "-",
+            "concepts\/context.html#processor-contract",
+            "Processor contract"
+        ],
+        "pipeline-runtime": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#pipeline-runtime",
+            "Pipeline Runtime"
+        ],
+        "step-selection": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#step-selection",
+            "Step selection"
+        ],
+        "processor-types": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#processor-types",
+            "Processor types"
+        ],
+        "step-execution-algorithm": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#step-execution-algorithm",
+            "Step execution algorithm"
+        ],
+        "failure-strategies": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#failure-strategies",
+            "Failure strategies"
+        ],
+        "streaming-exception-rule": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#streaming-exception-rule",
+            "Streaming exception rule"
+        ],
+        "streaming-semantics": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#streaming-semantics",
+            "Streaming semantics"
+        ],
+        "source-metadata": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#source-metadata",
+            "Source metadata"
+        ],
+        "response-construction": [
+            "-",
+            "-",
+            "concepts\/pipeline.html#response-construction",
+            "Response construction"
+        ],
+        "prompt-construction": [
+            "-",
+            "-",
+            "concepts\/prompting.html#prompt-construction",
+            "Prompt Construction"
+        ],
+        "message-shape": [
+            "-",
+            "-",
+            "concepts\/prompting.html#message-shape",
+            "Message shape"
+        ],
+        "system-prompt-composition": [
+            "-",
+            "-",
+            "concepts\/prompting.html#system-prompt-composition",
+            "System prompt composition"
+        ],
+        "history": [
+            "-",
+            "-",
+            "concepts\/prompting.html#history",
+            "History"
+        ],
+        "dynamic-context-builders": [
+            "-",
+            "-",
+            "concepts\/prompting.html#dynamic-context-builders",
+            "Dynamic context builders"
+        ],
+        "retrieval-attribution": [
+            "-",
+            "-",
+            "concepts\/prompting.html#retrieval-attribution",
+            "Retrieval attribution"
+        ],
+        "design-guidance": [
+            "-",
+            "-",
+            "concepts\/prompting.html#design-guidance",
+            "Design guidance"
+        ],
+        "retrieval": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#retrieval",
+            "Retrieval"
+        ],
+        "retrieval-flow": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#retrieval-flow",
+            "Retrieval flow"
+        ],
+        "connection-resolution": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#connection-resolution",
+            "Connection resolution"
+        ],
+        "query-embedding": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#query-embedding",
+            "Query embedding"
+        ],
+        "vector-search": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#vector-search",
+            "Vector search"
+        ],
+        "retrieval-groups": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#retrieval-groups",
+            "Retrieval groups"
+        ],
+        "answer-context": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#answer-context",
+            "Answer context"
+        ],
+        "retrieval-memory": [
+            "-",
+            "-",
+            "concepts\/retrieval.html#retrieval-memory",
+            "Retrieval memory"
+        ],
+        "connections-and-authentication": [
+            "-",
+            "-",
+            "Connections.html#ai-core-connections",
+            "Connections and authentication"
+        ],
+        "cookbook-standard-rag-pipeline": [
+            "-",
+            "-",
+            "cookbook\/standard-rag-pipeline.html#cookbook-standard-rag-pipeline",
+            "Cookbook: Standard RAG Pipeline"
+        ],
+        "data-evolution": [
+            "-",
+            "-",
+            "cookbook\/standard-rag-pipeline.html#data-evolution",
+            "Data evolution"
+        ],
+        "optional-retrieval-reuse": [
+            "-",
+            "-",
+            "cookbook\/standard-rag-pipeline.html#optional-retrieval-reuse",
+            "Optional retrieval reuse"
+        ],
+        "streaming-variant": [
+            "-",
+            "-",
+            "cookbook\/standard-rag-pipeline.html#streaming-variant",
+            "Streaming variant"
+        ],
+        "extension-points": [
+            "-",
+            "-",
+            "ExtensionPoints.html#ai-core-extension-points",
+            "Extension points"
+        ],
+        "custom-processor": [
+            "-",
+            "-",
+            "extending\/overview.html#custom-processor",
+            "Custom processor"
+        ],
+        "processor-design-rules": [
+            "-",
+            "-",
+            "extending\/overview.html#processor-design-rules",
+            "Processor design rules"
+        ],
+        "custom-prompt-context": [
+            "-",
+            "-",
+            "extending\/overview.html#custom-prompt-context",
+            "Custom prompt context"
+        ],
+        "custom-ai-connector": [
+            "-",
+            "-",
+            "extending\/overview.html#custom-ai-connector",
+            "Custom AI connector"
+        ],
+        "custom-vector-store-connector": [
+            "-",
+            "-",
+            "extending\/overview.html#custom-vector-store-connector",
+            "Custom vector-store connector"
+        ],
+        "custom-memory": [
+            "-",
+            "-",
+            "extending\/overview.html#custom-memory",
+            "Custom memory"
+        ],
+        "custom-adapter": [
+            "-",
+            "-",
+            "extending\/overview.html#custom-adapter",
+            "Custom adapter"
+        ],
+        "ai-core-developer-documentation": [
+            "-",
+            "-",
+            "Index.html#ai-core--developer-documentation",
+            "AI Core - Developer Documentation"
+        ],
+        "where-to-start": [
+            "-",
+            "-",
+            "Index.html#where-to-start",
+            "Where to start"
+        ],
+        "architectural-principles": [
+            "-",
+            "-",
+            "Index.html#architectural-principles",
+            "Architectural principles"
+        ],
+        "main-packages": [
+            "-",
+            "-",
+            "Index.html#main-packages",
+            "Main packages"
+        ],
+        "documentation-conventions": [
+            "-",
+            "-",
+            "Index.html#documentation-conventions",
+            "Documentation conventions"
+        ],
+        "logging-tracing-and-failure-analysis": [
+            "-",
+            "-",
+            "operations\/observability.html#logging-tracing-and-failure-analysis",
+            "Logging, Tracing and Failure Analysis"
+        ],
+        "pipelineloggerinterface": [
+            "-",
+            "-",
+            "operations\/observability.html#pipelineloggerinterface",
+            "PipelineLoggerInterface"
+        ],
+        "processingtrace": [
+            "-",
+            "-",
+            "operations\/observability.html#processingtrace",
+            "ProcessingTrace"
+        ],
+        "skips-are-not-failures": [
+            "-",
+            "-",
+            "operations\/observability.html#skips-are-not-failures",
+            "Skips are not failures"
+        ],
+        "pipeline-validation": [
+            "-",
+            "-",
+            "operations\/observability.html#pipeline-validation",
+            "Pipeline validation"
+        ],
+        "failure-strategy": [
+            "-",
+            "-",
+            "operations\/observability.html#failure-strategy",
+            "Failure strategy"
+        ],
+        "provider-resilience": [
+            "-",
+            "-",
+            "operations\/observability.html#provider-resilience",
+            "Provider resilience"
+        ],
+        "api-reference-overview": [
+            "-",
+            "-",
+            "reference\/api.html#api-reference-overview",
+            "API Reference Overview"
+        ],
+        "assistant-entry-points": [
+            "-",
+            "-",
+            "reference\/api.html#assistant-entry-points",
+            "Assistant entry points"
+        ],
+        "assistant-application-orchestrator": [
+            "-",
+            "-",
+            "reference\/api.html#assistant-application-orchestrator",
+            "Assistant\\Application\\Orchestrator"
+        ],
+        "configuration-contracts": [
+            "-",
+            "-",
+            "reference\/api.html#configuration-contracts",
+            "Configuration contracts"
+        ],
+        "assistantconfigurationinterface": [
+            "-",
+            "-",
+            "reference\/api.html#assistantconfigurationinterface",
+            "AssistantConfigurationInterface"
+        ],
+        "pipelinestepconfigurationinterface": [
+            "-",
+            "-",
+            "reference\/api.html#pipelinestepconfigurationinterface",
+            "PipelineStepConfigurationInterface"
+        ],
+        "pipeline-contracts": [
+            "-",
+            "-",
+            "reference\/api.html#pipeline-contracts",
+            "Pipeline contracts"
+        ],
+        "processorinterface": [
+            "-",
+            "-",
+            "reference\/api.html#processorinterface",
+            "ProcessorInterface"
+        ],
+        "processorstreaminginterface": [
+            "-",
+            "-",
+            "reference\/api.html#processorstreaminginterface",
+            "ProcessorStreamingInterface"
+        ],
+        "built-in-processor-identifiers": [
+            "-",
+            "-",
+            "reference\/api.html#built-in-processor-identifiers",
+            "Built-in processor identifiers"
+        ],
+        "runtime-state": [
+            "-",
+            "-",
+            "reference\/api.html#runtime-state",
+            "Runtime state"
+        ],
+        "retrievalresult": [
+            "-",
+            "-",
+            "reference\/api.html#retrievalresult",
+            "RetrievalResult"
+        ],
+        "answerstate": [
+            "-",
+            "-",
+            "reference\/api.html#answerstate",
+            "AnswerState"
+        ],
+        "prompt-contracts": [
+            "-",
+            "-",
+            "reference\/api.html#prompt-contracts",
+            "Prompt contracts"
+        ],
+        "contextbuilderinterface": [
+            "-",
+            "-",
+            "reference\/api.html#contextbuilderinterface",
+            "ContextBuilderInterface"
+        ],
+        "promptbuilder": [
+            "-",
+            "-",
+            "reference\/api.html#promptbuilder",
+            "PromptBuilder"
+        ],
+        "connection-contracts": [
+            "-",
+            "-",
+            "reference\/api.html#connection-contracts",
+            "Connection contracts"
+        ],
+        "aiconnectorinterface": [
+            "-",
+            "-",
+            "reference\/api.html#aiconnectorinterface",
+            "AiConnectorInterface"
+        ],
+        "vectorstoreconnectorinterface": [
+            "-",
+            "-",
+            "reference\/api.html#vectorstoreconnectorinterface",
+            "VectorStoreConnectorInterface"
+        ],
+        "memory-contract": [
+            "-",
+            "-",
+            "reference\/api.html#memory-contract",
+            "Memory contract"
+        ],
+        "memoryinterface": [
+            "-",
+            "-",
+            "reference\/api.html#memoryinterface",
+            "MemoryInterface"
+        ],
+        "indexing-contracts": [
+            "-",
+            "-",
+            "reference\/api.html#indexing-contracts",
+            "Indexing contracts"
+        ],
+        "indexingconfigurationinterface": [
+            "-",
+            "-",
+            "reference\/api.html#indexingconfigurationinterface",
+            "IndexingConfigurationInterface"
+        ],
+        "adapterinterface": [
+            "-",
+            "-",
+            "reference\/api.html#adapterinterface",
+            "AdapterInterface"
+        ],
+        "multidocumentadapterinterface": [
+            "-",
+            "-",
+            "reference\/api.html#multidocumentadapterinterface",
+            "MultiDocumentAdapterInterface"
+        ],
+        "indexerinterface": [
+            "-",
+            "-",
+            "reference\/api.html#indexerinterface",
+            "IndexerInterface"
+        ],
+        "vectordocumentindexer": [
+            "-",
+            "-",
+            "reference\/api.html#vectordocumentindexer",
+            "VectorDocumentIndexer"
+        ],
+        "tool-calling": [
+            "-",
+            "-",
+            "ToolCalling.html#ai-core-tool-calling",
+            "Tool calling"
+        ],
+        "assistant-request-lifecycle": [
+            "-",
+            "-",
+            "workflows\/assistant-request.html#assistant-request-lifecycle",
+            "Assistant Request Lifecycle"
+        ],
+        "synchronous-request": [
+            "-",
+            "-",
+            "workflows\/assistant-request.html#synchronous-request",
+            "Synchronous request"
+        ],
+        "streaming-request": [
+            "-",
+            "-",
+            "workflows\/assistant-request.html#streaming-request",
+            "Streaming request"
+        ],
+        "direct-interaction": [
+            "-",
+            "-",
+            "workflows\/assistant-request.html#direct-interaction",
+            "Direct interaction"
+        ],
+        "logging-lifecycle": [
+            "-",
+            "-",
+            "workflows\/assistant-request.html#logging-lifecycle",
+            "Logging lifecycle"
+        ],
+        "vector-indexing-lifecycle": [
+            "-",
+            "-",
+            "workflows\/indexing.html#vector-indexing-lifecycle",
+            "Vector Indexing Lifecycle"
+        ],
+        "flow": [
+            "-",
+            "-",
+            "workflows\/indexing.html#flow",
+            "Flow"
+        ],
+        "collection-resolution": [
+            "-",
+            "-",
+            "workflows\/indexing.html#collection-resolution",
+            "Collection resolution"
+        ],
+        "chunking": [
+            "-",
+            "-",
+            "workflows\/indexing.html#chunking",
+            "Chunking"
+        ],
+        "dry-runs": [
+            "-",
+            "-",
+            "workflows\/indexing.html#dry-runs",
+            "Dry runs"
+        ],
+        "embeddings": [
+            "-",
+            "-",
+            "workflows\/indexing.html#embeddings",
+            "Embeddings"
+        ],
+        "source-identity": [
+            "-",
+            "-",
+            "workflows\/indexing.html#source-identity",
+            "Source identity"
+        ],
+        "safe-replacement-order": [
+            "-",
+            "-",
+            "workflows\/indexing.html#safe-replacement-order",
+            "Safe replacement order"
+        ],
+        "adapters-and-higher-level-indexers": [
+            "-",
+            "-",
+            "workflows\/indexing.html#adapters-and-higher-level-indexers",
+            "Adapters and higher-level indexers"
+        ]
+    }
+}

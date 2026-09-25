@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Architecture</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="architecture">
+            <a id="ai-core-architecture"></a>
+            <h1>Architecture</h1>
+            
+    <p>AI Core has no TYPO3 or Symfony container dependency. Host applications provide configuration
+objects and compose connectors, providers and resolvers through constructor injection.</p>
+
+            
+    <p>The core contains:</p>
+
+            
+
+<ul>
+    <li>assistant context, memory and pipeline execution;</li>
+    <li>provider-neutral AI and vector-store contracts;</li>
+    <li>tool-calling contracts and bounded tool execution;</li>
+    <li>indexing, adapters, chunking and source identities;</li>
+    <li>resilience, connection health and normalized DTOs.</li>
+</ul>
+
+            
+    <p>TYPO3 persistence, TCA, controllers, backend modules and HTTP integration belong to the host
+integration. MCP protocol support is implemented by <code>madj2k/ai-mcp</code>.</p>
+
+    </div>
+<!-- content end -->
+</body>
+</html>

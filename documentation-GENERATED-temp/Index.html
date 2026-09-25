@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Core - Developer Documentation</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="ai-core-developer-documentation">
+            <a id="ai-core--developer-documentation"></a>
+            <h1>AI Core - Developer Documentation</h1>
+            
+    <p><code>madj2k/ai-core</code> provides the reusable runtime building blocks for
+configurable AI assistants and vector-based retrieval/indexing
+workflows.</p>
+
+            
+    <p>The library is deliberately split into small contracts: assistant
+orchestration, pipeline processors, prompt context builders, AI
+connectors, vector-store connectors, memory and indexing components can
+be replaced or extended independently.</p>
+
+            <div class="section" id="where-to-start">
+            <h2>Where to start</h2>
+            
+    <p>If you are new to the library, read the documentation in this order:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1"><a href="concepts/architecture.html">Architecture</a> - components and
+responsibilities.</li>
+    <li value="2"><a href="workflows/assistant-request.html">Assistant request lifecycle</a> -
+what happens during one chat turn.</li>
+    <li value="3"><a href="concepts/pipeline.html">Pipeline runtime</a> - step resolution,
+skipping, failures and streaming.</li>
+    <li value="4"><a href="concepts/context.html">Context and state</a> - how processors exchange
+data.</li>
+    <li value="5"><a href="concepts/prompting.html">Prompt construction</a> - system prompt,
+history and dynamic context.</li>
+    <li value="6"><a href="concepts/retrieval.html">Retrieval</a> - embeddings, vector search and
+retrieval groups.</li>
+    <li value="7"><a href="workflows/indexing.html">Indexing</a> - chunking, embeddings,
+generations and vector writes.</li>
+    <li value="8"><a href="extending/overview.html">Extension points</a> - where custom
+implementations plug in.</li>
+</ol>
+
+    </div>
+            <div class="section" id="architectural-principles">
+            <h2>Architectural principles</h2>
+            
+    <p>The codebase follows a few important principles:</p>
+
+            
+
+<ul>
+    <li class="dash"><strong>Configuration defines behavior; services execute it.</strong> Assistant and
+pipeline configuration are represented through interfaces instead of
+being hard-coded into the runtime.</li>
+    <li class="dash"><strong>Processors communicate through ``Context``.</strong> A processor reads
+input state and writes its result back to the shared runtime context.</li>
+    <li class="dash"><strong>Semantic step type and implementation identifier are separate.</strong> A
+pipeline step has an <code>AssistantPipelineProcessorType</code>, but the
+concrete implementation is selected through
+<code>getProcessorIdentifier()</code>.</li>
+    <li class="dash"><strong>Provider code is behind connector contracts.</strong> Chat/embedding
+providers implement <code>AiConnectorInterface</code>; vector databases
+implement <code>VectorStoreConnectorInterface</code>.</li>
+    <li class="dash"><strong>Retrieval memory is explicit pipeline behavior.</strong> The orchestrator
+does not automatically persist retrieval results.</li>
+    <li class="dash"><strong>Index replacement is generation based.</strong> New vectors are written
+before obsolete generations are deleted.</li>
+</ul>
+
+    </div>
+            <div class="section" id="main-packages">
+            <h2>Main packages</h2>
+            <table>
+                <thead>
+            <tr>
+                            <th>Package</th>
+                            <th>Responsibility</th>
+                    </tr>
+        </thead>
+    <tbody>
+    <tr>
+            <td><code>Assistant/Application</code></td>
+            <td>Assistant entry points and
+orchestration</td>
+    </tr>
+    <tr>
+            <td><code>Assistant/Context</code></td>
+            <td>Runtime state shared between steps</td>
+    </tr>
+    <tr>
+            <td><code>Assistant/Pipeline</code></td>
+            <td>Step execution, validation and
+processor lookup</td>
+    </tr>
+    <tr>
+            <td><code>Assistant/Prompt</code></td>
+            <td>Prompt assembly and extensible prompt
+context</td>
+    </tr>
+    <tr>
+            <td><code>Assistant/Memory</code></td>
+            <td>Conversation and retrieval-state
+persistence</td>
+    </tr>
+    <tr>
+            <td><code>Connection/Ai</code></td>
+            <td>LLM and embedding provider abstraction</td>
+    </tr>
+    <tr>
+            <td><code>Connection/VectorStore</code></td>
+            <td>Vector database abstraction</td>
+    </tr>
+    <tr>
+            <td><code>Connection/Resilience</code></td>
+            <td>Retry and provider error handling
+infrastructure</td>
+    </tr>
+    <tr>
+            <td><code>Indexing</code></td>
+            <td>Source normalization, chunking,
+embeddings and vector writes</td>
+    </tr>
+</tbody>
+</table>
+    </div>
+            <div class="section" id="documentation-conventions">
+            <h2>Documentation conventions</h2>
+            
+    <p>The developer guide focuses on <strong>runtime contracts and control flow</strong>,
+not just class signatures. The <a href="reference/api.html">API reference</a>
+complements this with a compact class/interface inventory.</p>
+
+            
+    </div>
+    </div>
+<!-- content end -->
+</body>
+</html>

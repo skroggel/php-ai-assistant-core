@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Connections and authentication</title>
+
+</head>
+<body>
+<!-- content start -->
+    <div class="section" id="connections-and-authentication">
+            <a id="ai-core-connections"></a>
+            <h1>Connections and authentication</h1>
+            
+    <p>AI connectors receive an <code>AiConnectionConfigurationInterface</code> and translate provider-specific
+requests and responses into core DTOs. Vector-store connectors use their corresponding connection
+contract.</p>
+
+            
+    <p>AI connectors support API-key authentication and OAuth 2.0 Client Credentials when the connection
+configuration exposes the OAuth settings. OAuth tokens are cached in memory and renewed before
+expiry. Authorization Code and interactive PKCE flows are application-specific and are outside the
+core connector contract.</p>
+
+            
+    <p>Connection health checks and retry policies are also provider-neutral. Applications decide how
+diagnostic results and logs are stored.</p>
+
+    </div>
+<!-- content end -->
+</body>
+</html>
