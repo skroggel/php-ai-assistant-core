@@ -1,12 +1,18 @@
 # AI Core
 
-`madj2k/ai-core` contains the framework-independent assistant runtime plus AI, vector-store and indexing building blocks. The indexing core owns source identities, chunking, embedding generation, vector replacement and indexer discovery.
-It has no TYPO3 or Symfony container dependency. Applications provide configuration objects and
-compose connectors and resolvers through constructor injection.
+`madj2k/ai-core` contains the framework-independent runtime and shared building blocks for Madj2k
+AI integrations:
 
-Conversation memory and its native PHP-session store are part of the core. Host applications can
-replace the store through `SessionStoreInterface`. TYPO3 source discovery, persistence, TCA,
-controllers, persistent logging and HTTP integration remain in `madj2k/ai-assistant`.
+- assistant context, memory and pipeline execution;
+- provider-neutral AI and vector-store contracts;
+- tool-calling contracts and bounded tool execution;
+- indexing, adapters, chunking and source identities;
+- resilience, connection health and normalized DTOs.
+
+The package has no TYPO3 or Symfony container dependency. Host applications provide configuration
+objects and compose connectors, providers and resolvers through constructor injection. TYPO3
+persistence, TCA, controllers, backend modules and HTTP integration belong to
+`madj2k/t3-ai-assistant`. MCP protocol support belongs to `madj2k/ai-mcp`.
 
 ## Requirements
 
@@ -19,6 +25,15 @@ controllers, persistent logging and HTTP integration remain in `madj2k/ai-assist
 composer require madj2k/ai-core
 ```
 
+## Public API
+
+Integrations should depend on public interfaces, DTOs, configuration contracts and facades. Custom
+pipeline processors, prompt context builders, AI connectors, vector-store connectors, tool
+providers, indexers and adapters are registered through their corresponding contracts.
+
+Classes marked with `@internal` are bundled implementations or provider-specific helpers. They may
+change without backward-compatibility guarantees.
+
 ## Tests
 
 ```bash
@@ -27,202 +42,6 @@ composer test
 ```
 
 The test suite is framework-independent and does not bootstrap TYPO3.
-
-## Chat options
-
-Host applications pass user-facing preferences as one compact `ChatOptions` object on each
-`AssistantRequest`. It contains the normalized response language, its optional BCP 47 code and
-the plain-language preference. The response language overrides language inferred from the
-question, quoted text or retrieved documents.
-
-The prompt builder applies these preferences only to answer generators and quality gates. Query
-optimization and retrieval remain unaffected. Technical accessibility such as keyboard support,
-focus handling and screen-reader semantics belongs to the host application's frontend and is not
-an optional core setting.
-
-For explicit utility interactions, the orchestrator also provides `handleDirect()`. It uses the
-assistant profile's configured AI connector and default model but bypasses all pipeline processors,
-retrieval and vector-store access. The caller decides when this route is appropriate; AI Core does
-not classify user input. Direct interactions can optionally be written to conversation memory.
-
-## Public API and extension points
-
-Integrations should depend on the provided interfaces, DTOs, configuration contracts and public
-facades. Custom pipeline processors, prompt context builders, connectors, client factories,
-indexers and file adapters are integrated through their corresponding interfaces or abstract base
-classes.
-
-Classes marked with `@internal` are bundled implementations or provider-specific helpers. They may
-change without backward-compatibility guarantees and should not be extended or referenced by
-integrations. The annotation does not restrict direct use in tests.
-
-### Embedding-dimension API migration
-
-Embedding dimensions belong to `AiConnectionConfigurationInterface` and are returned by
-`getEmbeddingDimension()`. They are no longer part of
-`VectorStoreConnectionConfigurationInterface`; `getVectorSize()` and the `vectorSize` constructor
-argument have been removed from that configuration.
-
-`ConnectionHealthChecker::checkVectorStore()` now requires an explicit `VectorCollection` and
-validates or creates that collection. Use `ConnectionHealthChecker::probeVectorStore()` when only a
-non-mutating connectivity check is required.
-
-## Embedding purposes
-
-`EmbeddingRequest` can describe whether text represents a document to be indexed or a query used
-for retrieval. The document indexer uses `EmbeddingPurpose::RetrievalDocument`; the retriever uses
-`EmbeddingPurpose::RetrievalQuery`. Connectors translate these provider-neutral purposes only when
-the selected provider and model support them.
-
-The Gemini connector maps both purposes to the corresponding task types for
-`gemini-embedding-001`. OpenAI currently has no equivalent request parameter and therefore leaves
-the purpose unused. Requests without an explicit purpose retain the previous behavior.
-
-## AI connection authentication
-
-AI connectors support two authentication modes:
-
-* API key authentication, where the configured API key is sent to the provider;
-* OAuth 2.0 Client Credentials, where the connector obtains a bearer access token from the
-  configured token endpoint.
-
-The OAuth token provider caches tokens in memory and renews them before expiry. Connection
-configuration objects may expose OAuth settings through `getAuthentication()`,
-`getOauthTokenEndpoint()`, `getOauthClientId()`, `getOauthClientSecret()` and `getOauthScope()`.
-Legacy configuration objects that only expose `getApiKey()` continue to use API-key
-authentication.
-
-OAuth client secrets and access tokens must not be written to logs. Authorization Code or
-interactive PKCE flows are intentionally outside the framework-independent connector contract;
-they require application-specific user interaction and callback handling.
-
-## Pipeline configuration
-
-Pipeline steps run in their configured order. Their stage describes the semantic position of the
-step; it does not reorder the pipeline. A common retrieval-augmented pipeline is:
-
-1. Query optimizer (`pre_retrieval`)
-2. Retriever (`retrieval`)
-3. Optional query optimizer (`post_retrieval`)
-4. Optional second retriever (`retrieval`)
-5. Context optimizer (`post_retrieval`)
-6. Answer generator (`pre_answer`)
-7. Optional quality gate (`post_answer`)
-
-Every retriever step has a unique, prompt-visible title and an optional collection
-override. The title also names the retrieval group. Each retriever appends its group to the
-retrievals collected so far. Context chunk and
-character limits are applied to every group independently before the consuming LLM step applies
-its final global context limit. Vector store connections resolve from the retriever-step override
-and then the assistant-profile default. Collections resolve from the step override and then the
-effective connection default. Collection overrides must be included in that connection's configured
-collection list.
-
-The validator uses the following stage and dependency rules:
-
-| Processor type | Expected stage | Dependency |
-| --- | --- | --- |
-| Query optimizer | `pre_retrieval` or `post_retrieval` | A post-retrieval optimizer should follow a retriever or memory step. |
-| Retriever | `retrieval` | None |
-| Context optimizer | `post_retrieval` | Must follow a retriever or memory step. |
-| Answer generator | `pre_answer` | Must not run after a quality gate. |
-| Quality gate | `post_answer` | Must follow an answer generator. |
-| Memory | Any | None |
-
-Invalid dependencies, duplicate persisted step UIDs, unknown processors and processor/type
-mismatches stop execution before the first processor runs. Unexpected stages, multiple answer
-generators or quality gates, and unusual failure strategies are reported as validation warnings.
-This permits custom pipelines without silently accepting configurations that cannot work.
-
-Failure strategies apply when a processor throws an exception:
-
-- `stop` aborts the pipeline and rethrows the exception.
-- `continue` logs the failure and runs the next step.
-- `fallback` is a deprecated alias of `continue`; it does not execute a separate fallback action.
-
-Answer generators and quality gates should normally use `stop`, because they define the visible
-answer. During streaming, only the final answer-producing step streams to the user. Once that step
-has emitted data, its failure always stops execution to avoid returning a partial answer as if it
-were complete.
-
-## Tool calling
-
-AI Core provides a provider-neutral tool-calling layer. Tool providers implement
-`ToolProviderInterface` and expose `ToolDefinition` objects. The runtime normalizes model tool
-calls to `ToolCall` and returns provider-independent `ToolResult` objects.
-
-The `ToolRegistry` collects providers through dependency injection. The `ToolCallingService` runs a
-bounded model/tool loop: the model receives the available definitions, requests tool calls, the
-registry executes them, and the results are returned to the model until it produces an answer or
-the round limit is reached.
-
-Context-dependent providers can implement `ContextAwareToolProviderInterface`. Host applications
-can then restrict tools to the active assistant profile and pipeline step. Providers must enforce
-their own authorization and input validation; a model-provided schema is not a security boundary.
-
-MCP is integrated by `madj2k/ai-mcp`, which maps MCP tools to these core contracts. AI Core does
-not depend on the MCP protocol and can also be used with local or application-specific providers.
-
-## Logging and diagnostics
-
-The core does not select a log file or storage backend. Applications inject a
-`PipelineLoggerInterface` implementation and decide whether events are written to a database,
-PSR logger, file or observability service. Validation warnings use the event name
-`pipeline.validation.warning`; failed steps use `step.failed`.
-
-The TYPO3 `madj2k/ai-assistant` integration stores pipeline events in
-`tx_aiassistant_pipeline_trace`. Configure tracing under **AI Assistant > Configuration**:
-
-- `chat.pipelineLog.mode = errors` stores failed events only.
-- `chat.pipelineLog.mode = verbose` stores the complete pipeline trace, including validation warnings.
-- `chat.pipelineLog.writePsrLog = 1` additionally forwards enabled events to TYPO3's PSR logger.
-
-Stored traces can be inspected under **AI Assistant > Diagnostics** and filtered by chat identifier.
-This is the primary place to follow one request through its pipeline steps.
-
-The extension configures its PSR log file as `var/log/tx_aiassistant.log`. General TYPO3 errors are
-usually written to files matching `var/log/typo3_*.log`. In a DDEV project, the files can be followed
-from the project root with:
-
-```bash
-ddev exec tail -f /var/www/html/var/log/tx_aiassistant.log
-ddev exec sh -c 'tail -f /var/www/html/var/log/typo3_*.log'
-```
-
-Normal pipeline events are debug-level diagnostics and are most reliably inspected in the backend
-Diagnostics view with pipeline log mode set to `verbose`. File output depends on the application's
-PSR log-level configuration.
-
-## Connector resilience
-
-OpenAI, Gemini and Qdrant clients are created through injectable factories. The default factories use
-Guzzle with explicit request and connection timeouts. Provider requests use bounded exponential
-backoff for transient network errors, rate limits and selected HTTP status codes.
-
-The default policy uses three attempts, a 250 ms initial delay, a 2 second maximum delay, a
-30 second request timeout and a 10 second connection timeout. Streaming requests are retried only
-before the first response chunk has been emitted, preventing duplicate output.
-
-Applications can adjust the policy without implementing a provider connector:
-
-```php
-use Madj2k\AiCore\Connection\Ai\OpenAiConnector;
-use Madj2k\AiCore\Connection\Resilience\RetryPolicy;
-
-$connector = new OpenAiConnector(
-    retryPolicy: new RetryPolicy(
-        maxAttempts: 4,
-        initialDelayMilliseconds: 500,
-        timeoutSeconds: 45.0,
-        connectTimeoutSeconds: 10.0,
-    ),
-);
-```
-
-For isolated tests or custom transports, implement `OpenAiClientFactoryInterface`,
-`GeminiClientFactoryInterface` or `QdrantClientFactoryInterface` and inject the factory into the
-connector. Final provider errors expose the provider, operation, HTTP status, retryability and
-number of attempts through `ApiException` or `VectorDatabaseException`.
 
 ## License
 
