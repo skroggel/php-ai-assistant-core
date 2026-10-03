@@ -30,6 +30,9 @@ use Madj2k\AiCore\Assistant\Log\PipelineLogMetaData;
 use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
 use Madj2k\AiCore\Assistant\Pipeline\Processor\ProcessorStreamingInterface;
 use Madj2k\AiCore\Assistant\Pipeline\Registry\ProcessorRegistry;
+use Madj2k\AiCore\Exception\ApiException;
+use Madj2k\AiCore\Exception\VectorDatabaseException;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
 /**
  * Class Pipeline
@@ -209,6 +212,9 @@ final class Pipeline
                 }
 
                 if (
+                    $exception instanceof ApiException
+                    || $exception instanceof VectorDatabaseException
+                    ||
                     $step->getFailureStrategy() === AssistantPipelineFailureStrategy::Stop
                     || ($stepIndex === $visibleAnswerStepIndex && $streamedData)
                 ) {

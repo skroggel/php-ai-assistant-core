@@ -176,7 +176,7 @@ final class VectorDocumentIndexerTest extends TestCase
             new TextChunker(),
             $identity,
         );
-        $document = new IndexableDocument('abcdefgh', new DocumentMetadata('page', '42', language: 1));
+        $document = new IndexableDocument('abcdefgh', new DocumentMetadata('page', '42', languageId: 1));
 
         return [$indexer, $configuration, $document, $identity];
     }

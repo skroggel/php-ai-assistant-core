@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Connection\Authentication;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use Madj2k\AiCore\Exception\ApiException;
 
 /**
@@ -38,6 +39,11 @@ final class OAuth2ClientCredentialsTokenProvider
 {
     /** @var array<string, array{token: string, expiresAt: int}> */
     private static array $tokens = [];
+
+    /**
+     * @param ClientInterface|null $httpClient Optional HTTP client for tests or custom transports.
+     */
+    public function __construct(private readonly ?ClientInterface $httpClient = null) {}
 
 
     /**
@@ -71,7 +77,7 @@ final class OAuth2ClientCredentialsTokenProvider
         if ($scope !== '') {
             $form['scope'] = $scope;
         }
-        $response = (new Client())->request('POST', $endpoint, [
+        $response = ($this->httpClient ?? new Client())->request('POST', $endpoint, [
             'auth' => [$clientId, $clientSecret],
             'form_params' => $form,
             'headers' => ['Accept' => 'application/json'],

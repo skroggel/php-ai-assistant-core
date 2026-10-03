@@ -68,7 +68,7 @@ final class PlainAdapter implements AdapterInterface
      */
     public function extract(string $path, DocumentMetadata $metadata): ?IndexableDocument
     {
-        $content = file_get_contents($path);
+        $content = @file_get_contents($path);
         if ($content === false) {
             return null;
         }

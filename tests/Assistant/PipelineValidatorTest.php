@@ -17,7 +17,7 @@ final class PipelineValidatorTest extends TestCase
     public function testRequiresAnAnswerProducingStep(): void
     {
         $this->expectException(AssistantException::class);
-        $this->expectExceptionMessage('needs at least one answer generator or memory step');
+        $this->expectExceptionMessage('needs at least one answer generator, query-optimizer or memory step');
 
         (new PipelineValidator())->validate([
             new PipelineStep(

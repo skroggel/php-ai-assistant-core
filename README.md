@@ -49,3 +49,8 @@ extension-point details.
 ## License
 
 GNU General Public License version 3. See [LICENSE](LICENSE).
+
+## Tests
+```
+ddev exec vendor/bin/phpunit --bootstrap vendor/autoload.php vendor/madj2k/ai-core/tests
+```

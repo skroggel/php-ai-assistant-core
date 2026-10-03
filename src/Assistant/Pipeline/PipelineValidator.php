@@ -136,6 +136,7 @@ final class PipelineValidator
 
             $hasAnswerGeneratorOrMemory = $hasAnswerGeneratorOrMemory
                 || in_array($type, [
+                    AssistantPipelineProcessorType::QueryOptimizer,
                     AssistantPipelineProcessorType::AnswerGenerator,
                     AssistantPipelineProcessorType::Memory,
                 ], true);
@@ -149,7 +150,7 @@ final class PipelineValidator
         }
 
         if (!$hasAnswerGeneratorOrMemory) {
-            $errors[] = 'The pipeline needs at least one answer generator or memory step.';
+            $errors[] = 'The pipeline needs at least one answer generator, query-optimizer or memory step.';
         }
         if (($typeCounts[AssistantPipelineProcessorType::AnswerGenerator->value] ?? 0) > 1) {
             $warnings[] = 'The pipeline contains multiple answer generators; only the last answer stage can stream.';
