@@ -19,4 +19,15 @@ final class TextChunkerTest extends TestCase
     {
         self::assertSame([], (new TextChunker())->chunk(" \n "));
     }
+
+    public function testReturnsUnicodeCharacterOffsetsForExactChunks(): void
+    {
+        $chunker = new TextChunker(chunkSize: 5, chunkOverlap: 2);
+
+        self::assertSame([
+            ['text' => 'äbc d', 'start' => 0, 'end' => 5],
+            ['text' => 'def', 'start' => 4, 'end' => 7],
+            ['text' => 'f', 'start' => 6, 'end' => 7],
+        ], $chunker->chunkWithOffsets("äbc   def"));
+    }
 }

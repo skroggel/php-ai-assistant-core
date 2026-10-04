@@ -30,14 +30,14 @@ namespace Madj2k\AiCore\Indexing;
  * @package Madj2k\AiCore
  * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
-final class TextChunker
+final readonly class TextChunker
 {
     /**
      * Default chunk size.
      *
      * @var int
      */
-    protected int $chunkSize = 1200;
+    protected int $chunkSize;
 
 
     /**
@@ -45,7 +45,7 @@ final class TextChunker
      *
      * @var int
      */
-    protected int $chunkOverlap = 150;
+    protected int $chunkOverlap;
 
 
     /**
@@ -53,7 +53,7 @@ final class TextChunker
      *
      * @var int
      */
-    protected int $minChunkChars = 1;
+    protected int $minChunkChars;
 
 
     /**
@@ -77,12 +77,12 @@ final class TextChunker
      * Passing null for chunk settings means that service defaults are used. This is important because
      * persisted values of 0 in the indexer configuration mean "use defaults".
      *
-     * @param string $text Text.
-     * @param int|null $chunkSize Optional chunk size. Null means default.
-     * @param int|null $chunkOverlap Optional chunk overlap. Null means default.
-     * @param int|null $maxChunks Optional maximum chunk count. Null means unlimited.
-     * @param int|null $minChunkChars Optional minimum chunk length. Null means default.
-     * @return array<int, string> Chunks.
+     * @param string $text Source text to normalize and split.
+     * @param int|null $chunkSize Maximum number of characters per chunk, or null for the configured default.
+     * @param int|null $chunkOverlap Number of characters repeated between adjacent chunks, or null for the configured default.
+     * @param int|null $maxChunks Maximum number of returned chunks, or null for no explicit limit.
+     * @param int|null $minChunkChars Minimum number of characters required for a chunk, or null for the configured default.
+     * @return array<int, string> Chunk texts in source order.
      */
     public function chunk(
         string $text,
@@ -91,6 +91,37 @@ final class TextChunker
         ?int $maxChunks = null,
         ?int $minChunkChars = null
     ): array {
+        return array_column($this->chunkWithOffsets(
+            $text,
+            $chunkSize,
+            $chunkOverlap,
+            $maxChunks,
+            $minChunkChars,
+        ), 'text');
+    }
+
+
+    /**
+     * Splits text into chunks and exposes their character ranges in the
+     * whitespace-normalized source text. Keeping this calculation here makes
+     * diagnostic previews use precisely the same boundaries as indexing.
+     *
+     * @param string $text Source text to normalize and split.
+     * @param int|null $chunkSize Maximum number of characters per chunk, or null for the configured default.
+     * @param int|null $chunkOverlap Number of characters repeated between adjacent chunks, or null for the configured default.
+     * @param int|null $maxChunks Maximum number of returned chunks, or null for no explicit limit.
+     * @param int|null $minChunkChars Minimum number of characters required for a chunk, or null for the configured default.
+     * @return array<int, array{text: string, start: int, end: int}> Chunk texts with zero-based inclusive start and exclusive end offsets.
+     */
+    public function chunkWithOffsets(
+        string $text,
+        ?int $chunkSize = null,
+        ?int $chunkOverlap = null,
+        ?int $maxChunks = null,
+        ?int $minChunkChars = null
+    ): array {
+        // Offsets must reference the exact normalized payload written to the
+        // vector store, so normalization happens before both slicing and counting.
         $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
 
         if ($text === '') {
@@ -111,7 +142,7 @@ final class TextChunker
             ? (int)$maxChunks
             : null;
 
-        /** @var array<int, string> $chunks */
+        /** @var array<int, array{text: string, start: int, end: int}> $chunks */
         $chunks = [];
 
         /** @var int $offset */
@@ -121,11 +152,20 @@ final class TextChunker
         $length = mb_strlen($text);
 
         while ($offset < $length) {
+            /** @var string $rawChunk */
+            $rawChunk = mb_substr($text, $offset, $size);
+
             /** @var string $chunk */
-            $chunk = trim(mb_substr($text, $offset, $size));
+            $chunk = trim($rawChunk);
 
             if (mb_strlen($chunk) >= $minimum) {
-                $chunks[] = $chunk;
+                $leadingWhitespace = mb_strlen($rawChunk) - mb_strlen(ltrim($rawChunk));
+                $start = $offset + $leadingWhitespace;
+                $chunks[] = [
+                    'text' => $chunk,
+                    'start' => $start,
+                    'end' => $start + mb_strlen($chunk),
+                ];
             }
 
             if ($limit !== null && count($chunks) >= $limit) {
