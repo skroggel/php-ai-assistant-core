@@ -21,6 +21,7 @@ final readonly class PipelineStep implements PipelineStepConfigurationInterface
         private AssistantPipelineFailureStrategy $failureStrategy = AssistantPipelineFailureStrategy::Stop,
         private int $maxContextChunks = 6,
         private int $maxContextCharacters = 9000,
+        private int $maxChunkCharacters = 0,
         private array $metadataFields = ['title', 'url'],
         private HistoryMode $historyMode = HistoryMode::None,
         private int $historyLimit = 0,
@@ -62,6 +63,8 @@ final readonly class PipelineStep implements PipelineStepConfigurationInterface
     public function getScoreThreshold(): float { return 0.0; }
     public function getMaxContextChunks(): int { return $this->maxContextChunks; }
     public function getMaxContextCharacters(): int { return $this->maxContextCharacters; }
+    public function getMaxChunksPerResult(): int { return 1; }
+    public function getMaxChunkCharacters(): int { return $this->maxChunkCharacters; }
     public function getPromptMetadataFieldList(): array { return $this->metadataFields; }
     public function getFailureStrategy(): AssistantPipelineFailureStrategy { return $this->failureStrategy; }
     public function getRetrievalVectorStoreConnection(): ?VectorStoreConnectionConfigurationInterface { return $this->retrievalVectorStoreConnection; }

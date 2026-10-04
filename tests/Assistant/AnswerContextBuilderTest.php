@@ -55,6 +55,23 @@ final class AnswerContextBuilderTest extends TestCase
         ));
     }
 
+    public function testTrimsIndividualChunkToConfiguredCharacterLimit(): void
+    {
+        $step = new PipelineStep(
+            maxContextChunks: 0,
+            maxContextCharacters: 0,
+            maxChunkCharacters: 10,
+            metadataFields: [],
+        );
+
+        self::assertSame(
+            "content:\n123456789…",
+            (new AnswerContextBuilder())->build([
+                $this->document('one', '', '', '123456789012345'),
+            ], $step),
+        );
+    }
+
     private function document(string $id, string $title, string $url, string $text): RetrievalDocument
     {
         return new RetrievalDocument(

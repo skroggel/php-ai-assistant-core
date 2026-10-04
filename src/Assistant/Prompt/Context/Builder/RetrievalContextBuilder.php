@@ -177,13 +177,19 @@ final class RetrievalContextBuilder extends AbstractContextBuilder
         $groups = $context->getRetrieval()->getGroups();
 
         $sections = [];
+        if ($groups !== []) {
+            $sections[] .= "\n\n[Retrieval Attribution Requirement]\n"
+                . 'Preserve every [Retrieval-ID: ...] identifier exactly and keep statements attributed to their retrieval. '
+                . 'You may remove duplicates, but do not merge away the retrieval boundaries.';
+        }
+
         foreach ($groups as $group) {
             $content = $this->answerContextBuilder->buildGroup($group);
             if ($content === '') {
                 continue;
             }
 
-            $header = sprintf('[Retrieval: %s]', $group->identifier);
+            $header = sprintf('[Retrieval-ID: %s]', $group->identifier);
             $details = array_filter([
                 $group->query !== '' ? 'query: ' . $group->query : '',
                 $group->collection !== '' ? 'collection: ' . $group->collection : '',

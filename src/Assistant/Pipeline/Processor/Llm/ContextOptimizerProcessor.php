@@ -103,11 +103,6 @@ final class ContextOptimizerProcessor extends AbstractLlmProcessor
         }
 
         $messages = $this->promptBuilder->buildMessages($context, $step);
-        if ($context->getRetrieval()->getGroups() !== [] && isset($messages[0]['content'])) {
-            $messages[0]['content'] .= "\n\n[Retrieval Attribution Requirement]\n"
-                . 'Preserve every [Retrieval: ...] identifier exactly and keep statements attributed to their retrieval. '
-                . 'You may remove duplicates, but do not merge away the retrieval boundaries.';
-        }
 
         $answerContext = $this->callAi($context, $messages, $step, $logContext);
         $context->getRetrieval()->setAnswerContext($answerContext !== '' ? $answerContext : $rawContext);

@@ -69,6 +69,7 @@ final readonly class RetrievalGroup
      * @param array<int, mixed> $rawResults Source-specific raw results.
      * @param int $maxContextChunks Maximum prompt chunks for this retrieval.
      * @param int $maxContextCharacters Maximum prompt characters for this retrieval.
+     * @param int $maxChunkCharacters Maximum prompt characters for one retrieval document.
      * @param array<int, string> $promptMetadataFields Metadata fields included in the prompt context.
      * @param string $collection Vector collection used for this retrieval.
      */
@@ -80,6 +81,7 @@ final readonly class RetrievalGroup
         array $rawResults = [],
         public int $maxContextChunks = 0,
         public int $maxContextCharacters = 0,
+        public int $maxChunkCharacters = 0,
         array $promptMetadataFields = [],
         public string $collection = '',
     ) {
@@ -113,6 +115,7 @@ final readonly class RetrievalGroup
             'rawResults' => $this->rawResults,
             'maxContextChunks' => $this->maxContextChunks,
             'maxContextCharacters' => $this->maxContextCharacters,
+            'maxChunkCharacters' => $this->maxChunkCharacters,
             'promptMetadataFields' => $this->promptMetadataFields,
             'collection' => $this->collection,
         ];
@@ -151,6 +154,7 @@ final readonly class RetrievalGroup
             rawResults: is_array($data['rawResults'] ?? null) ? $data['rawResults'] : [],
             maxContextChunks: (int)($data['maxContextChunks'] ?? 0),
             maxContextCharacters: (int)($data['maxContextCharacters'] ?? 0),
+            maxChunkCharacters: (int)($data['maxChunkCharacters'] ?? 0),
             promptMetadataFields: is_array($data['promptMetadataFields'] ?? null) ? $data['promptMetadataFields'] : [],
             collection: trim((string)($data['collection'] ?? '')),
         );

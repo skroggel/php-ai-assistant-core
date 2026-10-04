@@ -23,6 +23,7 @@ namespace Madj2k\AiCore\Assistant\Context\Retrieval;
 
 use Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface;
 use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
 /**
  * Class AnswerContextBuilder
@@ -51,6 +52,7 @@ final class AnswerContextBuilder
             $documents,
             $step->getMaxContextChunks(),
             $step->getMaxContextCharacters(),
+            $step->getMaxChunkCharacters(),
             $step->getPromptMetadataFieldList(),
         );
     }
@@ -68,6 +70,7 @@ final class AnswerContextBuilder
             $group->documents,
             $group->maxContextChunks,
             $group->maxContextCharacters,
+            $group->maxChunkCharacters,
             $group->promptMetadataFields,
         );
     }
@@ -79,6 +82,7 @@ final class AnswerContextBuilder
      * @param array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument> $documents Retrieval documents.
      * @param int $maxContextChunks Maximum number of context chunks.
      * @param int $maxContextCharacters Maximum number of context characters.
+     * @param int $maxChunkCharacters Maximum number of characters per context chunk.
      * @param array<int, string> $metadataFields Metadata fields included in the prompt.
      * @return string Prompt-ready retrieval context.
      */
@@ -86,6 +90,7 @@ final class AnswerContextBuilder
         array $documents,
         int $maxContextChunks,
         int $maxContextCharacters,
+        int $maxChunkCharacters,
         array $metadataFields,
     ): string {
 
@@ -101,7 +106,7 @@ final class AnswerContextBuilder
         $characters = 0;
 
         foreach ($limitedDocuments as $document) {
-            $chunk = $this->formatDocument($document, $metadataFields);
+            $chunk = $this->formatDocument($document, $metadataFields, $maxChunkCharacters);
             if ($chunk === '') {
                 continue;
             }
@@ -148,9 +153,14 @@ final class AnswerContextBuilder
      *
      * @param \Madj2k\AiCore\Assistant\DTO\RetrievalDocument $document Retrieved document.
      * @param array<int,string> $metadataFields Metadata fields.
+     * @param int $maxChunkCharacters Maximum number of content characters.
      * @return string
      */
-    private function formatDocument(RetrievalDocument $document, array $metadataFields): string
+    private function formatDocument(
+        RetrievalDocument $document,
+        array $metadataFields,
+        int $maxChunkCharacters = 0,
+    ): string
     {
         if (trim($document->text) === '') {
             return '';
@@ -166,7 +176,11 @@ final class AnswerContextBuilder
         }
 
         $lines[] = 'content:';
-        $lines[] = trim($document->text);
+        $text = trim($document->text);
+        if ($maxChunkCharacters > 0 && mb_strlen($text) > $maxChunkCharacters) {
+            $text = mb_substr($text, 0, max(0, $maxChunkCharacters - 1)) . '…';
+        }
+        $lines[] = $text;
 
         return implode("\n", $lines);
     }

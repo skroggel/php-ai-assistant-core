@@ -231,6 +231,20 @@ interface PipelineStepConfigurationInterface
      */
     public function getMaxContextCharacters(): int;
 
+    /**
+     * Returns the maximum number of excerpts created from one retrieval result.
+     *
+     * @return int
+     */
+    public function getMaxChunksPerResult(): int;
+
+    /**
+     * Returns the maximum character length of one retrieval excerpt.
+     *
+     * @return int
+     */
+    public function getMaxChunkCharacters(): int;
+
 
     /**
      * Returns metadata fields exposed to prompt context builders.

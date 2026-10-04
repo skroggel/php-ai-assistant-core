@@ -27,6 +27,7 @@ use Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalGroup;
 use Madj2k\AiCore\Assistant\DTO\RetrievalDocument;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
 use Madj2k\AiCore\DTO\DocumentMetadata;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
 /**
  * Class AbstractRetrieverProcessor
@@ -77,6 +78,7 @@ abstract readonly class AbstractRetrieverProcessor implements ProcessorInterface
             rawResults: $rawResults,
             maxContextChunks: $step->getMaxContextChunks(),
             maxContextCharacters: $step->getMaxContextCharacters(),
+            maxChunkCharacters: $step->getMaxChunkCharacters(),
             promptMetadataFields: $step->getPromptMetadataFieldList(),
             collection: trim($collection),
         ));
