@@ -36,7 +36,12 @@ use Madj2k\AiCore\Indexing\DTO\IndexableDocument;
 final class SourceIdentityGenerator
 {
     /**
+     */
+    /**
      * Creates a stable hash from source type, source identifier and language.
+     *
+     * @param \Madj2k\AiCore\Indexing\DTO\IndexableDocument $document
+     * @return string
      */
     public function createSourceHash(IndexableDocument $document): string
     {
@@ -45,6 +50,24 @@ final class SourceIdentityGenerator
         return sha1(implode('|', [
             $metadata->getSourceType(),
             $metadata->getSourceIdentifier(),
+            (string)$metadata->getLanguage(),
+        ]));
+    }
+
+    /**
+     * Creates a stable hash from source type, source identifier and language for a source group
+     * Relevant for documents with multiple pages!
+     *
+     * @param \Madj2k\AiCore\Indexing\DTO\IndexableDocument $document
+     * @return string
+     */
+    public function createSourceGroupHash(IndexableDocument $document): string
+    {
+        $metadata = $document->getMetadata();
+
+        return sha1(implode('|', [
+            $metadata->getSourceType(),
+            $metadata->getSourceGroupIdentifier(),
             (string)$metadata->getLanguage(),
         ]));
     }

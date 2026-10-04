@@ -69,6 +69,22 @@ vectors.
 `SourceIdentityGenerator` creates a stable source hash and deterministic
 vector-document IDs based on source identity plus chunk index.
 
+For multi-document sources, for example a PDF split into pages, each document
+also has a `source_group_hash`. The individual `source_hash` values remain
+distinct while all members share the same group hash:
+
+```text
+source_group_hash: hash(book.pdf)
+source_hash:       hash(book.pdf#page-1)
+source_hash:       hash(book.pdf#page-2)
+```
+
+For a single-document source, `source_hash` and `source_group_hash` are equal.
+The group hash allows a complete multi-document source to be reconciled after
+an update. Members that are no longer present are removed from vector storage
+and persisted source state only after all current group members were processed
+successfully. A failed group run therefore leaves the previous group intact.
+
 The index generation is a SHA-256 hash over chunk lengths and contents.
 It therefore changes when content **or chunk boundaries** change.
 

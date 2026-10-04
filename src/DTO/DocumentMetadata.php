@@ -50,6 +50,12 @@ class DocumentMetadata
 
 
     /**
+     * @var string
+     */
+    protected string $sourceGroupIdentifier = '';
+
+
+    /**
      * Source title.
      *
      * @var string
@@ -125,6 +131,7 @@ class DocumentMetadata
      *
      * @param string $sourceType Source type.
      * @param string $sourceIdentifier Source identifier.
+     * @param string $sourceGroupIdentifier Logical parent source identifier.
      * @param string $title Source title.
      * @param string $url Source URL.
      * @param string $language ISO language code.
@@ -138,6 +145,7 @@ class DocumentMetadata
     public function __construct(
         string $sourceType = '',
         string $sourceIdentifier = '',
+        string $sourceGroupIdentifier = '',
         string $title = '',
         string $url = '',
         string $language = '',
@@ -150,6 +158,9 @@ class DocumentMetadata
     ) {
         $this->sourceType = trim($sourceType);
         $this->sourceIdentifier = trim($sourceIdentifier);
+        $this->sourceGroupIdentifier = trim($sourceGroupIdentifier) !== ''
+            ? trim($sourceGroupIdentifier)
+            : trim($sourceIdentifier);
         $this->title = trim($title);
         $this->url = trim($url);
         $this->language = trim($language);
@@ -205,6 +216,29 @@ class DocumentMetadata
     public function setSourceIdentifier(string $sourceIdentifier): void
     {
         $this->sourceIdentifier = trim($sourceIdentifier);
+    }
+
+
+    /**
+     * Gets the source group identifier.
+     *
+     * @return string
+     */
+    public function getSourceGroupIdentifier(): string
+    {
+        return $this->sourceGroupIdentifier !== '' ? $this->sourceGroupIdentifier : $this->sourceIdentifier;
+    }
+
+
+    /**
+     * Sets the source group identifier.
+     *
+     * @param string $sourceGroupIdentifier
+     * @return void
+     */
+    public function setSourceGroupIdentifier(string $sourceGroupIdentifier): void
+    {
+        $this->sourceGroupIdentifier = trim($sourceGroupIdentifier);
     }
 
 
@@ -444,6 +478,7 @@ class DocumentMetadata
         return match ($field) {
             'source_type', 'sourceType' => $this->sourceType,
             'source_identifier', 'source_id', 'sourceIdentifier' => $this->sourceIdentifier,
+            'source_group_identifier', 'sourceGroupIdentifier' => $this->getSourceGroupIdentifier(),
             'title' => $this->title,
             'url' => $this->url,
             'language' => $this->language,
@@ -494,6 +529,7 @@ class DocumentMetadata
             'source_type' => $this->sourceType,
             'source_identifier' => $this->sourceIdentifier,
             'source_id' => $this->sourceIdentifier,
+            'source_group_identifier' => $this->getSourceGroupIdentifier(),
             'title' => $this->title,
             'url' => $this->url,
             'language' => $this->language,
@@ -524,6 +560,7 @@ class DocumentMetadata
                 'source_type',
                 'source_identifier',
                 'source_id',
+                'source_group_identifier',
                 'title',
                 'url',
                 'language',
@@ -541,17 +578,18 @@ class DocumentMetadata
         }
 
         return new self(
-            (string)($data['source_type'] ?? ''),
-            (string)($data['source_identifier'] ?? $data['source_id'] ?? ''),
-            (string)($data['title'] ?? ''),
-            (string)($data['url'] ?? ''),
-             (string)($data['language'] ?? ''),
-             (int)($data['language_id'] ?? -1),
-            (int)($data['page_id'] ?? 0),
-            (string)($data['path'] ?? ''),
-            (string)($data['filename'] ?? ''),
-            (int)($data['changed_at'] ?? 0),
-            $additional
+            sourceType: (string)($data['source_type'] ?? ''),
+            sourceIdentifier: (string)($data['source_identifier'] ?? $data['source_id'] ?? ''),
+            sourceGroupIdentifier: (string)($data['source_group_identifier'] ?? ''),
+            title: (string)($data['title'] ?? ''),
+            url: (string)($data['url'] ?? ''),
+            language: (string)($data['language'] ?? ''),
+            languageId: (int)($data['language_id'] ?? -1),
+            pageId: (int)($data['page_id'] ?? 0),
+            path: (string)($data['path'] ?? ''),
+            filename: (string)($data['filename'] ?? ''),
+            changedAt: (int)($data['changed_at'] ?? 0),
+            additional: $additional,
         );
     }
 }

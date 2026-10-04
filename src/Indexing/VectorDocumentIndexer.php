@@ -23,6 +23,8 @@ namespace Madj2k\AiCore\Indexing;
 
 use Madj2k\AiCore\Connection\Ai\DTO\EmbeddingRequest;
 use Madj2k\AiCore\Connection\Ai\Enum\EmbeddingPurpose;
+use Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface;
+use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection;
@@ -106,13 +108,7 @@ final readonly class VectorDocumentIndexer
             throw new \InvalidArgumentException('Collection name must not be empty.', 1781002001);
         }
 
-        $chunks = $this->textChunker->chunk(
-            $document->getContent(),
-            $this->positiveOrNull($configuration->getChunkSize()),
-            $this->positiveOrNull($configuration->getChunkOverlap()),
-            $this->positiveOrNull($configuration->getMaxChunks()),
-            $this->positiveOrNull($configuration->getMinChunkChars()),
-        );
+        $chunks = $this->chunkDocument($configuration, $document);
 
         if ($chunks === []) {
             return 0;
@@ -122,6 +118,141 @@ final readonly class VectorDocumentIndexer
             return count($chunks);
         }
 
+        [$aiConnection, $vectorStoreConnection] = $this->resolveConnections($configuration);
+
+        $embeddingResponses = $this->embedChunks($aiConnection, $chunks);
+
+        $actualVectorSize = $this->resolveVectorSize($embeddingResponses);
+        if ($actualVectorSize === null) {
+            return 0;
+        }
+
+        $this->validateVectorDimension($aiConnection, $actualVectorSize);
+
+        // The collection dimension is known only after the provider response.
+        $collection = new VectorCollection(
+            $collectionName,
+            $actualVectorSize,
+            $vectorStoreConnection->getDistance(),
+        );
+
+        [$sourceHash, $indexGeneration, $vectorDocuments] = $this->buildVectorDocuments(
+            $document,
+            $chunks,
+            $embeddingResponses,
+            $collection,
+        );
+
+        if ($vectorDocuments === []) {
+            return 0;
+        }
+
+        $vectorStoreConnector = $this->vectorStoreConnectorResolver->get(
+            $vectorStoreConnection->getConnectorIdentifier(),
+        );
+
+        $writeResult = $this->upsertAndDelete(
+            $vectorStoreConnector,
+            $vectorStoreConnection,
+            $collection,
+            $vectorDocuments,
+            $sourceHashesToDelete,
+            $sourceHash,
+            $indexGeneration,
+        );
+
+        return $writeResult->getWritten();
+    }
+
+
+    /**
+     * Deletes old source members of a complete multi-document group.
+     *
+     * @param \Madj2k\AiCore\Indexing\Configuration\IndexingConfigurationInterface $configuration
+     * @param string $collectionName
+     * @param array $sourceHashes
+     * @return void
+     * @throws \Madj2k\AiCore\Exception\VectorDatabaseException
+     */
+    public function deleteSourceHashes(
+        IndexingConfigurationInterface $configuration,
+        string $collectionName,
+        array $sourceHashes,
+    ): void {
+
+        $connection = $configuration->getVectorStoreConnection();
+        if ($connection === null || $sourceHashes === []) {
+            return;
+        }
+
+        $collection = new VectorCollection(
+            $collectionName,
+            $configuration->getAiConnection()?->getEmbeddingDimension() ?? 0,
+            $connection->getDistance()
+        );
+
+        $connector = $this->vectorStoreConnectorResolver->get($connection->getConnectorIdentifier());
+        $this->deleteSourceHashesFromStorage($connector, $connection, $collection, $sourceHashes);
+    }
+
+
+    /**
+     * Deletes source hashes from one vector-store collection.
+     *
+     * @param \Madj2k\AiCore\Connection\VectorStore\VectorStoreConnectorInterface $connector
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $connection
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection
+     * @param array<int, string> $sourceHashes
+     * @return void
+     * @throws \Madj2k\AiCore\Exception\VectorDatabaseException
+     */
+    private function deleteSourceHashesFromStorage(
+        \Madj2k\AiCore\Connection\VectorStore\VectorStoreConnectorInterface $connector,
+        VectorStoreConnectionConfigurationInterface $connection,
+        VectorCollection $collection,
+        array $sourceHashes,
+    ): void {
+        $sourceHashes = array_values(array_unique(array_filter(array_map('trim', $sourceHashes))));
+        foreach ($sourceHashes as $hash) {
+            $connector->deleteBySourceHash($connection, $collection, $hash);
+        }
+    }
+
+
+    /**
+     * Splits document content according to the configured chunking limits.
+     *
+     * Non-positive configuration values are normalized to the TextChunker
+     * defaults by passing null.
+     *
+     * @param \Madj2k\AiCore\Indexing\Configuration\IndexingConfigurationInterface $configuration
+     * @param \Madj2k\AiCore\Indexing\DTO\IndexableDocument $document
+     * @return array<int, string> Generated text chunks.
+     */
+    private function chunkDocument(
+        IndexingConfigurationInterface $configuration,
+        IndexableDocument $document,
+    ): array {
+        return $this->textChunker->chunk(
+            $document->getContent(),
+            $this->positiveOrNull($configuration->getChunkSize()),
+            $this->positiveOrNull($configuration->getChunkOverlap()),
+            $this->positiveOrNull($configuration->getMaxChunks()),
+            $this->positiveOrNull($configuration->getMinChunkChars()),
+        );
+    }
+
+    /**
+     * Resolves and validates the AI and vector-store connections required for
+     * a non-dry-run indexing operation.
+     *
+     * @param \Madj2k\AiCore\Indexing\Configuration\IndexingConfigurationInterface $configuration
+     * @return array{0: AiConnectionConfigurationInterface, 1: VectorStoreConnectionConfigurationInterface}
+     * @throws \RuntimeException When a required connection is missing.
+     */
+    private function resolveConnections(
+        IndexingConfigurationInterface $configuration,
+    ): array {
         $aiConnection = $configuration->getAiConnection();
         if ($aiConnection === null) {
             throw new \RuntimeException('No AI connection configured for indexer.', 1780573401);
@@ -132,6 +263,20 @@ final readonly class VectorDocumentIndexer
             throw new \RuntimeException('No vector store connection configured for indexer.', 1780573402);
         }
 
+        return [$aiConnection, $vectorStoreConnection];
+    }
+
+    /**
+     * Creates embeddings in the same order as the input chunks.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface $aiConnection
+     * @param array<int, string> $chunks
+     * @return array<int, \Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse>
+     */
+    private function embedChunks(
+        AiConnectionConfigurationInterface $aiConnection,
+        array $chunks,
+    ): array {
         $embeddingRequests = array_map(
             static fn (string $chunkText): EmbeddingRequest => new EmbeddingRequest(
                 text: $chunkText,
@@ -139,15 +284,25 @@ final readonly class VectorDocumentIndexer
             ),
             $chunks,
         );
-        $embeddingResponses = $this->aiConnectorResolver
+
+        return $this->aiConnectorResolver
             ->get($aiConnection->getConnectorIdentifier())
             ->embedBatch($aiConnection, $embeddingRequests);
+    }
 
-        $actualVectorSize = $this->resolveVectorSize($embeddingResponses);
-        if ($actualVectorSize === null) {
-            return 0;
-        }
 
+    /**
+     * Validates that the provider dimension matches the configured dimension.
+     *
+     * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface $aiConnection
+     * @param int $actualVectorSize
+     * @return void
+     * @throws \Madj2k\AiCore\Exception\IndexingException
+     */
+    private function validateVectorDimension(
+        AiConnectionConfigurationInterface $aiConnection,
+        int $actualVectorSize,
+    ): void {
         $configuredVectorSize = $aiConnection->getEmbeddingDimension();
         if ($configuredVectorSize <= 0) {
             throw new IndexingException(
@@ -162,13 +317,26 @@ final readonly class VectorDocumentIndexer
                 $configuredVectorSize,
             ), 1781002002);
         }
+    }
 
-        $collection = new VectorCollection(
-            $collectionName,
-            $actualVectorSize,
-            $vectorStoreConnection->getDistance(),
-        );
-        $sourceHash = $this->sourceIdentityGenerator->createSourceHash($document);
+
+    /**
+     * Builds vector documents, stable source IDs and the current index generation.
+     * Empty embedding responses are omitted from the vector write.
+     *
+     * @param \Madj2k\AiCore\Indexing\DTO\IndexableDocument $document
+     * @param array<int, string> $chunks
+     * @param array<int, \Madj2k\AiCore\Connection\Ai\DTO\EmbeddingResponse> $embeddingResponses
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection
+     * @return array{0: string, 1: string, 2: array<int, VectorDocument>}
+     */
+    private function buildVectorDocuments(
+        IndexableDocument $document,
+        array $chunks,
+        array $embeddingResponses,
+        VectorCollection $collection,
+    ): array {
+        $sourceHash = $document->getSourceHash();
         $indexGeneration = $this->createIndexGeneration($chunks);
         $vectorDocuments = [];
         foreach ($chunks as $index => $chunkText) {
@@ -182,27 +350,47 @@ final readonly class VectorDocumentIndexer
             $vectorDocuments[] = new VectorDocument(
                 id: $this->sourceIdentityGenerator->createVectorDocumentId($sourceHash, $index),
                 vector: $embedding,
-                payload: $document->createPayload($index, $chunkText, $sourceHash, $indexGeneration),
+                payload: $document->createPayload($index, $chunkText, $indexGeneration),
                 vectorName: $collection->getName(),
             );
         }
 
-        if ($vectorDocuments === []) {
-            return 0;
-        }
+        return [$sourceHash, $indexGeneration, $vectorDocuments];
+    }
 
-        $vectorStoreConnector = $this->vectorStoreConnectorResolver->get(
-            $vectorStoreConnection->getConnectorIdentifier(),
-        );
+
+    /**
+     * Writes the new generation first and then removes obsolete source hashes and
+     * generations. This preserves the previous generation when the write fails.
+     *
+     * @param \Madj2k\AiCore\Connection\VectorStore\VectorStoreConnectorInterface $vectorStoreConnector
+     * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface $vectorStoreConnection
+     * @param \Madj2k\AiCore\Connection\VectorStore\DTO\VectorCollection $collection
+     * @param array<int, VectorDocument> $vectorDocuments
+     * @param array $sourceHashesToDelete
+     * @param string $sourceHash
+     * @param string $indexGeneration
+     * @return \Madj2k\AiCore\Connection\VectorStore\DTO\VectorWriteResult
+     * @throws \Madj2k\AiCore\Exception\VectorDatabaseException
+     */
+    private function upsertAndDelete(
+        \Madj2k\AiCore\Connection\VectorStore\VectorStoreConnectorInterface $vectorStoreConnector,
+        VectorStoreConnectionConfigurationInterface $vectorStoreConnection,
+        VectorCollection $collection,
+        array $vectorDocuments,
+        array $sourceHashesToDelete,
+        string $sourceHash,
+        string $indexGeneration,
+    ): \Madj2k\AiCore\Connection\VectorStore\DTO\VectorWriteResult {
+
         $writeResult = $vectorStoreConnector->upsert($vectorStoreConnection, $collection, $vectorDocuments);
 
-        $sourceHashesToDelete = array_values(array_unique(array_filter(array_map('trim', $sourceHashesToDelete))));
-        foreach ($sourceHashesToDelete as $hash) {
-            if ($hash === $sourceHash) {
-                continue;
-            }
-            $vectorStoreConnector->deleteBySourceHash($vectorStoreConnection, $collection, $hash);
-        }
+        $this->deleteSourceHashesFromStorage(
+            $vectorStoreConnector,
+            $vectorStoreConnection,
+            $collection,
+            array_diff($sourceHashesToDelete, [$sourceHash]),
+        );
 
         $vectorStoreConnector->deleteObsoleteSourceGenerations(
             $vectorStoreConnection,
@@ -211,8 +399,9 @@ final readonly class VectorDocumentIndexer
             $indexGeneration,
         );
 
-        return $writeResult->getWritten();
+        return $writeResult;
     }
+
 
     /**
      * Returns the common dimension of all non-empty embedding responses.
