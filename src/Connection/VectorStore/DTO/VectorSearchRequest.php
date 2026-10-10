@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace Madj2k\AiCore\Connection\VectorStore\DTO;
 
+use Madj2k\AiCore\Connection\VectorStore\Filter\DTO\FilterGroup;
+
 /**
  * Class VectorSearchRequest
  *
@@ -93,6 +95,14 @@ final class VectorSearchRequest
 
 
     /**
+     * Payload filter.
+     *
+     * @var FilterGroup|null
+     */
+    protected ?FilterGroup $filter = null;
+
+
+    /**
      * Constructor.
      *
      * @param string $collection Collection name.
@@ -102,6 +112,7 @@ final class VectorSearchRequest
      * @param bool $withPayload Include payload.
      * @param bool $withVector Include vector.
      * @param string $vectorName Vector name.
+     * @param FilterGroup|null $filter Payload filter.
      */
     public function __construct(
         string $collection = '',
@@ -110,7 +121,8 @@ final class VectorSearchRequest
         array $params = ['hnsw_ef' => 128, 'exact' => false],
         bool $withPayload = true,
         bool $withVector = false,
-        string $vectorName = ''
+        string $vectorName = '',
+        ?FilterGroup $filter = null,
     ) {
         $this->collection = $collection;
         $this->vector = $vector;
@@ -119,6 +131,7 @@ final class VectorSearchRequest
         $this->withPayload = $withPayload;
         $this->withVector = $withVector;
         $this->vectorName = $vectorName;
+        $this->filter = $filter;
     }
 
 
@@ -280,5 +293,28 @@ final class VectorSearchRequest
     public function setVectorName(string $vectorName): void
     {
         $this->vectorName = trim($vectorName);
+    }
+
+
+    /**
+     * Returns the payload filter.
+     *
+     * @return FilterGroup|null Payload filter.
+     */
+    public function getFilter(): ?FilterGroup
+    {
+        return $this->filter;
+    }
+
+
+    /**
+     * Sets the payload filter.
+     *
+     * @param FilterGroup|null $filter Payload filter.
+     * @return void
+     */
+    public function setFilter(?FilterGroup $filter): void
+    {
+        $this->filter = $filter;
     }
 }

@@ -40,7 +40,7 @@ logging.
 ## Skips are not failures
 
 When `canProcess()` returns false, `Pipeline` records `step.skipped`
-with reason `Required context slot missing.` and proceeds.
+with reason `Required context slot missing or execution blocked.` and proceeds.
 
 When debugging a missing answer or missing retrieval, check skipped
 steps before assuming provider failure.

@@ -155,7 +155,7 @@ final class Pipeline
                     'step_uid' => (int)$step->getUid(),
                     'step_title' => $step->getTitle(),
                     'processor_type' => $step->getType()->value,
-                    'reason' => 'Required context slot missing.',
+                    'reason' => 'Required context slot missing or execution blocked.',
                 ];
 
                 if ($logContext instanceof PipelineLogMetaData) {

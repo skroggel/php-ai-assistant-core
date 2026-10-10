@@ -24,10 +24,14 @@ If you are new to the library, read the documentation in this order:
 5.  [Prompt construction](concepts/prompting.md) - system prompt,
     history and dynamic context.
 6.  [Retrieval](concepts/retrieval.md) - embeddings, vector search and
-    retrieval groups.
-7.  [Indexing](workflows/indexing.md) - chunking, embeddings,
-    generations and vector writes.
-8.  [Extension points](extending/overview.md) - where custom
+     retrieval groups.
+7.  [UI components](concepts/ui-components.md) - declarative streamed answer
+     components and configured interactions.
+8.  [Vector filters](concepts/vector-filters.md) - generic payload filters and
+     connector mapping.
+9.  [Indexing](workflows/indexing.md) - chunking, embeddings,
+     generations and vector writes.
+10. [Extension points](extending/overview.md) - where custom
     implementations plug in.
 
 ## Architectural principles

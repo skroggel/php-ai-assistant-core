@@ -26,6 +26,7 @@ use Madj2k\AiCore\Assistant\Context\Assistant\AssistantContext;
 use Madj2k\AiCore\Assistant\Context\Request\History;
 use Madj2k\AiCore\Assistant\Context\Request\Request;
 use Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalResult;
+use Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalPlan;
 use Madj2k\AiCore\Assistant\Context\Trace\ProcessingTrace;
 
 /**
@@ -70,6 +71,13 @@ final class Context
      * @var \Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalResult
      */
     protected RetrievalResult $retrieval;
+
+    /**
+     * Runtime retrieval selection plan.
+     *
+     * @var \Madj2k\AiCore\Assistant\Context\Retrieval\RetrievalPlan
+     */
+    protected RetrievalPlan $retrievalPlan;
 
 
     /**
@@ -118,6 +126,7 @@ final class Context
         $this->request = $request;
         $this->history = $history;
         $this->retrieval = $retrieval;
+        $this->retrievalPlan = new RetrievalPlan();
         $this->answer = $answer;
         $this->currentQuery = $request->getQuery();
         $this->processingTrace = $processingTrace;
@@ -217,6 +226,27 @@ final class Context
     public function setRetrieval(RetrievalResult $retrieval): void
     {
         $this->retrieval = $retrieval;
+    }
+
+    /**
+     * Returns the retrieval selection plan.
+     *
+     * @return RetrievalPlan Retrieval plan.
+     */
+    public function getRetrievalPlan(): RetrievalPlan
+    {
+        return $this->retrievalPlan;
+    }
+
+    /**
+     * Sets the retrieval selection plan.
+     *
+     * @param RetrievalPlan $retrievalPlan Retrieval plan.
+     * @return void
+     */
+    public function setRetrievalPlan(RetrievalPlan $retrievalPlan): void
+    {
+        $this->retrievalPlan = $retrievalPlan;
     }
 
 

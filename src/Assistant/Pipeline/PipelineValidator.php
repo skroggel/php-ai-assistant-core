@@ -179,6 +179,7 @@ final class PipelineValidator
                 AssistantPipelineStage::PreRetrieval,
                 AssistantPipelineStage::PostRetrieval,
             ],
+            AssistantPipelineProcessorType::RetrievalSelector => [AssistantPipelineStage::PreRetrieval],
             AssistantPipelineProcessorType::Retriever => [AssistantPipelineStage::Retrieval],
             AssistantPipelineProcessorType::ContextOptimizer => [AssistantPipelineStage::PostRetrieval],
             AssistantPipelineProcessorType::AnswerGenerator => [AssistantPipelineStage::PreAnswer],

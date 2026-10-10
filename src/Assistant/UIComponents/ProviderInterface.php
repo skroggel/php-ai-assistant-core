@@ -19,41 +19,30 @@ declare(strict_types=1);
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-namespace Madj2k\AiCore\Assistant\Enum;
+namespace Madj2k\AiCore\Assistant\UIComponents;
+
+use Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface;
+use Madj2k\AiCore\Assistant\Context\Context;
 
 /**
- * Enum AssistantPipelineProcessorType
+ * Interface ProviderInterface
  *
- * Identifies the semantic role of a processor within an assistant pipeline.
+ * Provides the effective UI component definitions for one pipeline step.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
  * @package Madj2k\AiCore
  * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
-enum AssistantPipelineProcessorType: string
+interface ProviderInterface
 {
-    case QueryOptimizer = 'query_optimizer';
-    case Retriever = 'retriever';
-    case RetrievalSelector = 'retrieval_selector';
-    case ContextOptimizer = 'context_optimizer';
-    case AnswerGenerator = 'answer_generator';
-    case QualityGate = 'quality_gate';
-    case Memory = 'memory';
-
     /**
-     * Returns a human-readable processor type label.
+     * Returns components available to the current pipeline step.
+     *
+     * @param \Madj2k\AiCore\Assistant\Context\Context $context Current assistant context.
+     * @param \Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface $step Pipeline step.
+     * @return array<int,Definition> Effective component definitions.
      */
-    public function getLabel(): string
-    {
-        return match ($this) {
-            self::QueryOptimizer => 'Query optimizer',
-            self::Retriever => 'Retriever',
-            self::RetrievalSelector => 'Retrieval selector',
-            self::ContextOptimizer => 'Context optimizer',
-            self::AnswerGenerator => 'Answer generator',
-            self::QualityGate => 'Quality gate',
-            self::Memory => 'Memory',
-        };
-    }
+    public function getDefinitions(Context $context, PipelineStepConfigurationInterface $step): array;
 }

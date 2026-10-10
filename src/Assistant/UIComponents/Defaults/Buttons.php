@@ -19,41 +19,38 @@ declare(strict_types=1);
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-namespace Madj2k\AiCore\Assistant\Enum;
+namespace Madj2k\AiCore\Assistant\UIComponents\Defaults;
+
+use Madj2k\AiCore\Assistant\UIComponents\Definition;
 
 /**
- * Enum AssistantPipelineProcessorType
+ * Class Buttons
  *
- * Identifies the semantic role of a processor within an assistant pipeline.
+ * Provides the default configurable button group definition.
  *
  * @author Steffen Kroggel <developer@steffenkroggel.de>
+ * @author Maximilian Fäßler <maximilian@faesslerweb.de>
  * @copyright Steffen Kroggel <developer@steffenkroggel.de>, Maximilian Fäßler <maximilian@faesslerweb.de>
  * @package Madj2k\AiCore
  * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3
  */
-enum AssistantPipelineProcessorType: string
+final class Buttons
 {
-    case QueryOptimizer = 'query_optimizer';
-    case Retriever = 'retriever';
-    case RetrievalSelector = 'retrieval_selector';
-    case ContextOptimizer = 'context_optimizer';
-    case AnswerGenerator = 'answer_generator';
-    case QualityGate = 'quality_gate';
-    case Memory = 'memory';
-
     /**
-     * Returns a human-readable processor type label.
+     * Returns the default definition.
+     *
+     * @return \Madj2k\AiCore\Assistant\UIComponents\Definition
      */
-    public function getLabel(): string
+    public static function definition(): Definition
     {
-        return match ($this) {
-            self::QueryOptimizer => 'Query optimizer',
-            self::Retriever => 'Retriever',
-            self::RetrievalSelector => 'Retrieval selector',
-            self::ContextOptimizer => 'Context optimizer',
-            self::AnswerGenerator => 'Answer generator',
-            self::QualityGate => 'Quality gate',
-            self::Memory => 'Memory',
-        };
+        return new Definition(
+            'buttons',
+            'Displays configured buttons that submit their configured prompts.',
+            '<div class="ai-buttons">{{#actions}}{{#url}}<a href="{{url}}" target="_blank" rel="noopener noreferrer">{{label}}</a>{{/url}}{{#promptTemplate}}<button type="button" data-ai-action="{{identifier}}">{{label}}</button>{{/promptTemplate}}{{/actions}}</div>',
+            [],
+            [],
+            ['actions', 'label', 'identifier'],
+            'ai-ui-buttons',
+        );
     }
 }

@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Madj2k\AiCore\Assistant\Pipeline\Processor\Retrieval;
 
 use Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface;
+use Madj2k\AiCore\Assistant\Configuration\FilterAwarePipelineStepConfigurationInterface;
 use Madj2k\AiCore\Assistant\Context\Context;
 use Madj2k\AiCore\Assistant\Log\PipelineLogMetaData;
 use Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface;
@@ -33,6 +34,8 @@ use Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInt
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorSearchRequest;
 use Madj2k\AiCore\Connection\Resolver\AiConnectorResolver;
 use Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver;
+use Madj2k\AiCore\Connection\VectorStore\Filter\FilterValueResolverInterface;
+use Madj2k\AiCore\Connection\VectorStore\Filter\IdentityFilterValueResolver;
 
 /**
  * Class RetrieverProcessor
@@ -55,11 +58,13 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
      * @param \Madj2k\AiCore\Connection\Resolver\AiConnectorResolver $aiConnectorResolver AI connector registry.
      * @param \Madj2k\AiCore\Connection\Resolver\VectorStoreConnectorResolver $vectorStoreConnectorResolver Vector store connector registry.
      * @param \Madj2k\AiCore\Assistant\Log\PipelineLoggerInterface $pipelineLogger Pipeline logger.
+     * @param \Madj2k\AiCore\Connection\VectorStore\FilterValueResolverInterface $filterValueResolver Filter value resolver.
      */
     public function __construct(
         private AiConnectorResolver          $aiConnectorResolver,
         private VectorStoreConnectorResolver $vectorStoreConnectorResolver,
         private PipelineLoggerInterface      $pipelineLogger,
+        private ?FilterValueResolverInterface $filterValueResolver = null,
     ) {
     }
 
@@ -78,6 +83,12 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
      */
     public function canProcess(Context $context, PipelineStepConfigurationInterface $step): bool
     {
+        if (method_exists($step, 'getRetrievalIdentifier')
+            && !$context->getRetrievalPlan()->allows((string)$step->getRetrievalIdentifier())
+        ) {
+            return false;
+        }
+
         $connection = $this->resolveVectorStoreConnection($context, $step);
 
         return trim($context->getCurrentQuery()) !== ''
@@ -121,22 +132,11 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
             ))
             ->getEmbedding();
 
-        /** @todo implement filters in step to add to params
-         * params: [
-         *      'hnsw_ef' => 128,
-         *      'exact' => false,
-         *      'filter' => [
-         *          'must' => [
-         *              [
-         *                  'key' => 'meta.document_type',
-         *                  'match' => [
-         *                      'value' => 'faq',
-         *                  ],
-         *              ],
-         *          ],
-         *      ],
-         * ],
-         */
+        $filter = $step instanceof FilterAwarePipelineStepConfigurationInterface
+            ? $step->getRetrievalFilter()
+            : null;
+        $filter = ($this->filterValueResolver ?? new IdentityFilterValueResolver())->resolve($filter, $context);
+
         $rows = $this->vectorStoreConnectorResolver
             ->get($vectorStoreConnection->getConnectorIdentifier())
             ->search($vectorStoreConnection, new VectorSearchRequest(
@@ -149,7 +149,8 @@ final readonly class RetrieverProcessor extends AbstractRetrieverProcessor
                 ],
                 withPayload: true,
                 withVector: false,
-                vectorName: $collection
+                vectorName: $collection,
+                filter: $filter,
             ));
 
 

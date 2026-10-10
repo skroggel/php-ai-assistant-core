@@ -33,10 +33,14 @@ use Madj2k\AiCore\Connection\VectorStore\DTO\VectorDocument;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorSearchRequest;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorSearchResult;
 use Madj2k\AiCore\Connection\VectorStore\DTO\VectorWriteResult;
+use Madj2k\AiCore\Connection\VectorStore\Filter\DTO\FilterConjunction;
+use Madj2k\AiCore\Connection\VectorStore\Filter\DTO\FilterGroup;
+use Madj2k\AiCore\Connection\VectorStore\Filter\DTO\FilterOperator;
 use Madj2k\AiCore\Exception\VectorDatabaseException;
 use Psr\Log\LoggerInterface;
 use Qdrant\Models\Filter\Condition\MatchAny;
 use Qdrant\Models\Filter\Condition\MatchString;
+use Qdrant\Models\Filter\Condition\IsEmpty;
 use Qdrant\Models\Filter\Filter;
 use Qdrant\Models\PointStruct;
 use Qdrant\Models\PointsStruct;
@@ -307,9 +311,7 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
         /** @var array<string, mixed> $params */
         $params = $request->getParams();
 
-        /** @var array<string, mixed>|null $filter */
-        $filter = is_array($params['filter'] ?? null) ? $params['filter'] : null;
-        unset($params['filter']);
+        $filter = $request->getFilter();
 
         try {
             /** @var \Qdrant\Models\Request\SearchRequest $searchRequest */
@@ -630,44 +632,31 @@ final class QdrantVectorStoreConnector implements VectorStoreConnectorInterface
     /**
      * Builds a native Qdrant filter from the generic filter configuration.
      *
-     * @param array<string, mixed> $filter Filter configuration.
+     * @param FilterGroup $filter Generic filter configuration.
      * @return \Qdrant\Models\Filter\Filter Qdrant filter.
      */
-    protected function buildQdrantFilter(array $filter): Filter
+    protected function buildQdrantFilter(FilterGroup $filter): Filter
     {
         $qdrantFilter = new Filter();
-
-        /** @var mixed $must */
-        $must = $filter['must'] ?? null;
-
-        if (!is_array($must)) {
-            return $qdrantFilter;
-        }
-
-        foreach ($must as $condition) {
-            if (!is_array($condition)) {
+        foreach ($filter->conditions as $condition) {
+            $key = trim($condition->field);
+            if ($key === '') {
                 continue;
             }
 
-            /** @var string $key */
-            $key = trim((string)($condition['key'] ?? ''));
-
-            /** @var mixed $match */
-            $match = $condition['match'] ?? null;
-
-            if ($key === '' || !is_array($match)) {
+            $target = $filter->conjunction === FilterConjunction::Or ? 'addShould' : 'addMust';
+            if ($condition->operator === FilterOperator::Equals) {
+                $qdrantFilter->{$target}(new MatchString($key, (string)$condition->value));
                 continue;
             }
-
-            if (array_key_exists('any', $match)) {
-                /** @var array<int, mixed> $values */
-                $values = is_array($match['any']) ? array_values($match['any']) : [$match['any']];
-                $qdrantFilter->addMust(new MatchAny($key, $values));
+            if ($condition->operator === FilterOperator::In) {
+                $values = is_array($condition->value) ? array_values($condition->value) : [$condition->value];
+                $qdrantFilter->{$target}(new MatchAny($key, $values));
                 continue;
             }
-
-            if (array_key_exists('value', $match)) {
-                $qdrantFilter->addMust(new MatchString($key, (string)$match['value']));
+            if ($condition->operator === FilterOperator::Exists) {
+                $qdrantFilter->addMustNot(new IsEmpty($key));
+                continue;
             }
         }
 
