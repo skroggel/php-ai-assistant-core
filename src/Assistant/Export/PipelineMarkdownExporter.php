@@ -87,7 +87,7 @@ final class PipelineMarkdownExporter
                 $lines[] = '';
                 $lines[] = '- Identifier: `' . $component->identifier . '`';
                 $lines[] = '- Description: ' . $this->value($component->description);
-                $lines[] = '- Inline: ' . $this->boolean($component->inline);
+                $lines[] = '- Render mode: `' . $component->renderMode . '`';
                 $lines[] = '- CSS class: `' . $this->value($component->cssClass) . '`';
                 $lines[] = '';
                 $lines[] = '#### Template';

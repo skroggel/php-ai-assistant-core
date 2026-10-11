@@ -90,10 +90,11 @@ final readonly class UIComponentsContextBuilder implements ContextBuilderInterfa
 
         $lines = [
             'Use the following UI components when they improve the answer.',
-            'Never output HTML, JavaScript or framework code for a UI component.',
-            'Use the component block syntax exactly as documented below. Inline link components may use :::ui link{"label":"...","url":"..."}. The component already renders its label and link; do not repeat the label as Markdown.',
-            'Correct: Read more at :::ui link{"label":"Product details","url":"/products.html"}.',
-            'Incorrect: Read more at [Product details](:::ui link{"label":"Product details","url":"/products.html"}).',
+            'Never output HTML, JavaScript, Markdown-links for a UI component.',
+            'Never use Markdown-links at all',
+            'Use the self-contained @@UI_COMPONENT JSON syntax exactly as documented below.',
+            'The component renders its own label and link; do not repeat the label as Markdown.',
+            'Correct: Read more at @@UI_COMPONENT {"type":"link","data":{"label":"Product details","url":"/products.html"}}.',
         ];
 
         foreach ($definitions as $definition) {
@@ -116,9 +117,7 @@ final readonly class UIComponentsContextBuilder implements ContextBuilderInterfa
                     $lines[] = '- ' . $action->identifier . ': label "' . $label . '"; prompt "' . $action->promptTemplate . '"';
                 }
             }
-            $lines[] = 'Syntax: :::ui ' . $definition->identifier;
-            $lines[] = '{"id":"unique-id", ...component data...}';
-            $lines[] = ':::';
+            $lines[] = 'Syntax: @@UI_COMPONENT {"type":"' . $definition->identifier . '","data":{...}}';
         }
 
         return implode("\n", $lines);

@@ -52,7 +52,7 @@ final class Link
             ['label', 'url'],
             'ai-ui-link',
             '',
-            true,
+            'inline',
         );
     }
 }

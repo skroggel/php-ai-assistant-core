@@ -6,12 +6,10 @@ the frontend renders the component from a trusted definition.
 
 ## Response format
 
-UI blocks use a Markdown-adjacent, dedicated syntax:
+UI components use a dedicated, self-contained JSON marker syntax:
 
 ```text
-:::ui select-list
-{"id":"products","options":[{"label":"A","value":"a"}]}
-:::
+@@UI_COMPONENT {"type":"select-list","data":{"id":"products","options":[{"label":"A","value":"a"}]}}
 ```
 
 Normal Markdown and UI blocks can be mixed in one answer. `BlockParser` parses

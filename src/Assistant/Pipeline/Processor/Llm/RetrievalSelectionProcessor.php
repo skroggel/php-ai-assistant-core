@@ -72,11 +72,37 @@ final class RetrievalSelectionProcessor extends AbstractLlmProcessor
     public function process(Context $context, PipelineStepConfigurationInterface $step, ?PipelineLogMetaData $logContext = null): void
     {
         $raw = $this->callAi($context, $this->promptBuilder->buildMessages($context, $step), $step, $logContext);
-        $json = json_decode(trim($raw), true);
+        $json = $this->decodeSelection($raw);
         if (!is_array($json)) { return; }
         $mode = in_array($json['mode'] ?? '', ['all', 'selected', 'all_except', 'none'], true) ? $json['mode'] : 'all';
         $targets = is_array($json['targets'] ?? null) ? array_values(array_filter(array_map('strval', $json['targets']))) : [];
         $metadata = is_array($json['metadata'] ?? null) ? $json['metadata'] : [];
         $context->setRetrievalPlan(new RetrievalPlan($mode, $targets, $metadata));
+    }
+
+    /**
+     * Decodes plain, fenced or embedded JSON returned by the selector.
+     *
+     * @param string $raw Raw model output.
+     * @return array<string,mixed>|null Decoded selector result.
+     */
+    private function decodeSelection(string $raw): ?array
+    {
+        $value = trim($raw);
+        $value = preg_replace('/^```(?:json)?\s*|\s*```$/i', '', $value) ?? $value;
+        $decoded = json_decode(trim($value), true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        $start = strpos($value, '{');
+        $end = strrpos($value, '}');
+        if ($start === false || $end === false || $end <= $start) {
+            return null;
+        }
+
+        $decoded = json_decode(substr($value, $start, $end - $start + 1), true);
+
+        return is_array($decoded) ? $decoded : null;
     }
 }

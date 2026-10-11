@@ -46,7 +46,7 @@ final readonly class Definition
      * @param array<int,string> $placeholders Component and context placeholders.
      * @param string $cssClass Additional CSS class for the component wrapper.
      * @param string $title Human-readable component title.
-     * @param bool $inline Whether the component is rendered inline with Markdown text.
+     * @param string $renderMode Component rendering mode: inline or block.
      */
     public function __construct(
         public string $identifier,
@@ -57,7 +57,7 @@ final readonly class Definition
         public array $placeholders = [],
         public string $cssClass = '',
         public string $title = '',
-        public bool $inline = false,
+        public string $renderMode = 'block',
     ) {
     }
 
@@ -86,7 +86,7 @@ final readonly class Definition
             'placeholders' => $this->placeholders,
             'cssClass' => $this->cssClass,
             'title' => $this->title,
-            'inline' => $this->inline,
+            'renderMode' => $this->renderMode,
         ];
     }
 
@@ -107,7 +107,7 @@ final readonly class Definition
             $this->placeholders,
             $this->cssClass,
             $this->title,
-            $this->inline,
+            $this->renderMode,
         );
     }
 
@@ -138,7 +138,7 @@ final readonly class Definition
             $this->placeholders,
             implode(' ', $classes),
             $this->title,
-            $this->inline,
+            $this->renderMode,
         );
     }
 
@@ -159,7 +159,7 @@ final readonly class Definition
             $this->placeholders,
             $this->cssClass,
             trim($title),
-            $this->inline,
+            $this->renderMode,
         );
     }
 
@@ -180,7 +180,7 @@ final readonly class Definition
             $this->placeholders,
             $this->cssClass,
             $this->title,
-            $this->inline,
+            $this->renderMode,
         );
     }
 
@@ -211,7 +211,7 @@ final readonly class Definition
                 : $this->placeholders,
             $this->cssClass,
             $this->title,
-            $this->inline,
+            $this->renderMode,
         )->withCssClass((string)($overrides['cssClass'] ?? ''));
     }
 }

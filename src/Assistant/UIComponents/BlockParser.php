@@ -45,6 +45,7 @@ final class BlockParser
      */
     public function parse(string $content): array
     {
+        $content = preg_replace('/:::"([A-Za-z0-9._-]+)"/', ':::ui $1', $content) ?? $content;
         $pattern = '/^:::ui[ \t]+([A-Za-z0-9._-]+)[ \t]*\R(.*?)^:::[ \t]*(?:\R|$)/ms';
         preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE);
 
@@ -61,6 +62,9 @@ final class BlockParser
             $identifier = (string)($matches[1][$index][0] ?? '');
             $payload = trim((string)($matches[2][$index][0] ?? ''));
             $data = json_decode($payload, true);
+            if (!is_array($data) && $identifier === 'headline' && $payload !== '') {
+                $data = ['text' => $payload];
+            }
             if (!is_array($data)) {
                 $blocks[] = new Block('markdown', $raw);
                 $offset = $start + strlen($raw);

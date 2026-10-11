@@ -46,6 +46,7 @@ final class QueryContextBuilder extends AbstractContextBuilder
     {
         return in_array($type, [
             AssistantPipelineProcessorType::QueryOptimizer,
+            AssistantPipelineProcessorType::RetrievalSelector,
             AssistantPipelineProcessorType::ContextOptimizer,
             AssistantPipelineProcessorType::AnswerGenerator,
             AssistantPipelineProcessorType::QualityGate,
@@ -58,7 +59,8 @@ final class QueryContextBuilder extends AbstractContextBuilder
     public function build(Context $context, PipelineStepConfigurationInterface $step): array
     {
         return match ($step->getType()) {
-            AssistantPipelineProcessorType::QueryOptimizer => $this->filterSections([
+            AssistantPipelineProcessorType::QueryOptimizer,
+            AssistantPipelineProcessorType::RetrievalSelector => $this->filterSections([
                 $this->section('Current Query', $context->getCurrentQuery(), 10),
                 $this->section('Original User Query', $context->getRequest()->getQuery(), 20),
             ]),

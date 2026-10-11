@@ -25,6 +25,7 @@ use Madj2k\AiCore\Assistant\Context\Context;
 use Madj2k\AiCore\Assistant\Context\Retrieval\AnswerContextBuilder;
 use Madj2k\AiCore\Assistant\Configuration\PipelineStepConfigurationInterface;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineProcessorType;
+use Madj2k\AiCore\Assistant\Prompt\Context\PromptSection;
 use Madj2k\AiCore\Assistant\Enum\AssistantPipelineStage;
 
 /**
@@ -97,7 +98,7 @@ final class RetrievalContextBuilder extends AbstractContextBuilder
 
         $answerContext = $this->buildRetrievedContext($context, $step);
         if ($answerContext === '') {
-            return '';
+            return $this->noRetrievalMessage();
         }
 
         if ($storeWhenBuilt) {
@@ -137,7 +138,7 @@ final class RetrievalContextBuilder extends AbstractContextBuilder
     private function buildRetrievedContextSections(Context $context, PipelineStepConfigurationInterface $step): array
     {
         if ($context->getRetrieval()->getDocumentCount() === 0) {
-            return [];
+            return [new PromptSection('Retrieval Status', $this->noRetrievalMessage(), 20)];
         }
 
         return $this->filterSections([
@@ -200,6 +201,16 @@ final class RetrievalContextBuilder extends AbstractContextBuilder
         }
 
         return $this->applyGlobalLimitFairly($sections, $step->getMaxContextCharacters());
+    }
+
+    /**
+     * Returns the explicit prompt signal used when retrieval produced no documents.
+     *
+     * @return string No-results instruction.
+     */
+    private function noRetrievalMessage(): string
+    {
+        return 'No retrieval results are available for this request. Do not invent facts or claim that a retrieval source supports an answer.';
     }
 
 
