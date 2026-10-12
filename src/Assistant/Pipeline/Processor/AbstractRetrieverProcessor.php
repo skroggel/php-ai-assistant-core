@@ -63,15 +63,18 @@ abstract readonly class AbstractRetrieverProcessor implements ProcessorInterface
         string $query = '',
         string $collection = '',
     ): void {
-        $retrievalTitle = trim($step->getTitle());
-        if ($retrievalTitle === '') {
-            $retrievalTitle = $step->getUid() !== null && $step->getUid() > 0
+        $retrievalIdentifier = trim($step->getRetrievalIdentifier());
+        if ($retrievalIdentifier === '') {
+            $retrievalIdentifier = trim($step->getTitle());
+        }
+        if ($retrievalIdentifier === '') {
+            $retrievalIdentifier = $step->getUid() !== null && $step->getUid() > 0
                 ? 'retrieval-' . $step->getUid()
                 : $processorIdentifier;
         }
 
         $context->getRetrieval()->storeGroup(new RetrievalGroup(
-            identifier: $retrievalTitle,
+            identifier: $retrievalIdentifier,
             processorIdentifier: $processorIdentifier,
             query: trim($query) !== '' ? trim($query) : $context->getCurrentQuery(),
             documents: $documents,

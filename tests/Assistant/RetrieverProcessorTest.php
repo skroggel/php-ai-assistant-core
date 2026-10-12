@@ -64,6 +64,7 @@ final class RetrieverProcessorTest extends TestCase
             type: AssistantPipelineProcessorType::Retriever,
             title: 'knowledge',
             retrievalCollection: 'special',
+            retrievalIdentifier: '2',
         );
 
         $processor->process($context, $step);
@@ -71,7 +72,7 @@ final class RetrieverProcessorTest extends TestCase
         self::assertSame('special', $vectorConnector->searchRequest?->getCollection());
         self::assertSame(EmbeddingPurpose::RetrievalQuery, $embeddingRequest?->getPurpose());
         self::assertSame('special', $context->getRetrieval()->getGroups()[0]->collection);
-        self::assertSame('knowledge', $context->getRetrieval()->getGroups()[0]->identifier);
+        self::assertSame('2', $context->getRetrieval()->getGroups()[0]->identifier);
     }
 
 

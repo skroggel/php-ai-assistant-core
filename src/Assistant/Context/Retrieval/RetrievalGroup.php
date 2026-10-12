@@ -62,7 +62,7 @@ final readonly class RetrievalGroup
     /**
      * Constructor.
      *
-     * @param string $identifier Prompt-visible retrieval name derived from the retriever-step title.
+     * @param string $identifier Prompt-visible retrieval identifier configured on the retriever step.
      * @param string $processorIdentifier Identifier of the producing processor.
      * @param string $query Query used for this retrieval.
      * @param array<int, \Madj2k\AiCore\Assistant\DTO\RetrievalDocument> $documents Normalized retrieval documents.

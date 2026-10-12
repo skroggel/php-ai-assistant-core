@@ -73,6 +73,14 @@ interface PipelineStepConfigurationInterface
 
 
     /**
+     * Returns the optional prompt-visible retrieval identifier.
+     *
+     * @return string
+     */
+    public function getRetrievalIdentifier(): string;
+
+
+    /**
      * Returns the pipeline stage.
      *
      * @return \Madj2k\AiCore\Assistant\Enum\AssistantPipelineStage;

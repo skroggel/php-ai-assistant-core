@@ -38,6 +38,7 @@ final readonly class PipelineStep implements PipelineStepConfigurationInterface
         private AssistantPipelineStage $stage = AssistantPipelineStage::PreAnswer,
         private ?VectorStoreConnectionConfigurationInterface $retrievalVectorStoreConnection = null,
         private string $retrievalCollection = '',
+        private string $retrievalIdentifier = '',
     ) {
     }
 
@@ -45,6 +46,7 @@ final readonly class PipelineStep implements PipelineStepConfigurationInterface
     public function getTitle(): string { return $this->title; }
     public function getType(): AssistantPipelineProcessorType { return $this->type; }
     public function getProcessorIdentifier(): string { return $this->identifier; }
+    public function getRetrievalIdentifier(): string { return $this->retrievalIdentifier; }
     public function getStage(): AssistantPipelineStage { return $this->stage; }
     public function getIncludeIdentityPrompt(): bool { return $this->includeIdentity; }
     public function getIncludeBehaviorRules(): bool { return $this->includeBehavior; }
