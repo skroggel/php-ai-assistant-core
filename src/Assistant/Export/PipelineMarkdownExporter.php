@@ -63,7 +63,7 @@ final class PipelineMarkdownExporter
             '## Assistant',
             '',
             '- Title: ' . $this->value($assistant->getTitle()),
-            '- Label: ' . $this->value($assistant->getAssistantLabel()),
+            '- Name: ' . $this->value($assistant->getAssistantName()),
             '',
             '## Global Prompts',
             '',

@@ -54,11 +54,11 @@ final class AssistantContext
 
 
     /**
-     * Public assistant label.
+     * Public assistant name.
      *
      * @var string
      */
-    protected string $assistantLabel = '';
+    protected string $assistantName = '';
 
 
     /**
@@ -114,7 +114,7 @@ final class AssistantContext
      *
      * @param int $uid
      * @param string $title
-     * @param string $assistantLabel
+     * @param string $assistantName
      * @param \Madj2k\AiCore\Connection\Configuration\AiConnectionConfigurationInterface|null $aiConnection
      * @param \Madj2k\AiCore\Connection\Configuration\VectorStoreConnectionConfigurationInterface|null $vectorStoreConnection
      * @param string $identityPrompt
@@ -125,7 +125,7 @@ final class AssistantContext
     public function __construct(
         int $uid = 0,
         string $title = '',
-        string $assistantLabel = '',
+        string $assistantName = '',
         ?AiConnectionConfigurationInterface $aiConnection = null,
         ?VectorStoreConnectionConfigurationInterface $vectorStoreConnection = null,
         string $identityPrompt = '',
@@ -136,7 +136,7 @@ final class AssistantContext
     ) {
         $this->uid = $uid;
         $this->title = $title;
-        $this->assistantLabel = $assistantLabel;
+        $this->assistantName = $assistantName;
         $this->aiConnection = $aiConnection;
         $this->vectorStoreConnection = $vectorStoreConnection;
         $this->identityPrompt = $identityPrompt;
@@ -193,25 +193,25 @@ final class AssistantContext
 
 
     /**
-     * Returns the public assistant label.
+     * Returns the public assistant name.
      *
-     * @return string Public assistant label.
+     * @return string Public assistant name.
      */
-    public function getAssistantLabel(): string
+    public function getAssistantName(): string
     {
-        return $this->assistantLabel;
+        return $this->assistantName;
     }
 
 
     /**
-     * Sets the public assistant label.
+     * Sets the public assistant name.
      *
-     * @param string $assistantLabel Public assistant label.
+     * @param string $assistantName Public assistant name.
      * @return void
      */
-    public function setAssistantLabel(string $assistantLabel): void
+    public function setAssistantName(string $assistantName): void
     {
-        $this->assistantLabel = $assistantLabel;
+        $this->assistantName = $assistantName;
     }
 
 

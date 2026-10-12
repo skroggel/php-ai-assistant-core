@@ -53,11 +53,11 @@ interface AssistantConfigurationInterface
     public function getTitle(): string;
 
     /**
-     * Returns the assistant label shown to users.
+     * Returns the assistant name shown to users.
      *
      * @return string
      */
-    public function getAssistantLabel(): string;
+    public function getAssistantName(): string;
 
 
     /**

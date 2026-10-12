@@ -47,7 +47,7 @@ final class AssistantContextFactory
         return new AssistantContext(
             uid: (int)$assistantProfile->getUid(),
             title: trim($assistantProfile->getTitle()),
-            assistantLabel: trim($assistantProfile->getAssistantLabel()),
+            assistantName: trim($assistantProfile->getAssistantName()),
             aiConnection: $assistantProfile->getAiConnection(),
             vectorStoreConnection: $assistantProfile->getVectorStoreConnection(),
             identityPrompt: trim($assistantProfile->getIdentityPrompt()),

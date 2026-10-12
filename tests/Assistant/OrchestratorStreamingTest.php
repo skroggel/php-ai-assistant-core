@@ -83,7 +83,7 @@ final class OrchestratorStreamingTest extends TestCase
             public function __construct(private readonly array $steps) {}
             public function getUid(): ?int { return 1; }
             public function getTitle(): string { return 'Test profile'; }
-            public function getAssistantLabel(): string { return 'Test assistant'; }
+            public function getAssistantName(): string { return 'Test assistant'; }
             public function getIdentityPrompt(): string { return ''; }
             public function getBehaviorRules(): string { return ''; }
             public function getRetrievalRules(): string { return ''; }
